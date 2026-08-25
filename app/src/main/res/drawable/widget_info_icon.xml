@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original alert glyph: amber disc with dark exclamation mark. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/pxx_warn"
+        android:pathData="M12,12 m-10.5,0 a10.5,10.5 0 1,0 21,0 a10.5,10.5 0 1,0 -21,0" />
+    <path
+        android:fillColor="@color/pxx_ink"
+        android:pathData="M10.95,5.6 h2.1 v8.2 h-2.1 z M10.95,15.9 h2.1 v2.5 h-2.1 z" />
+</vector>

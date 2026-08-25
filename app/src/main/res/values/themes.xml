@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- PiercingXX: monochrome + one accent. Strong emphasis inverts
+         (Signal block, Ink text — see colorOnPrimary / secondaryContainer). -->
+    <style name="Theme.XxClock" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/primary</item>
+        <item name="colorOnPrimaryContainer">@color/on_primary</item>
+        <item name="colorSecondaryContainer">@color/primary</item>
+        <item name="colorOnSecondaryContainer">@color/on_primary</item>
+        <item name="android:colorBackground">@color/app_background</item>
+        <item name="colorSurface">@color/app_background</item>
+        <item name="colorSurfaceContainerLowest">@color/app_background</item>
+        <item name="colorSurfaceContainerLow">@color/app_surface</item>
+        <item name="colorSurfaceContainer">@color/app_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/app_surface</item>
+        <item name="colorSurfaceContainerHighest">@color/app_surface</item>
+        <item name="colorOnSurface">@color/on_background</item>
+        <item name="colorOnSurfaceVariant">@color/on_background_muted</item>
+        <item name="colorOutline">@color/outline</item>
+        <item name="colorOutlineVariant">@color/outline_faint</item>
+        <item name="android:fontFamily">@font/jetbrains_mono</item>
+        <item name="fontFamily">@font/jetbrains_mono</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

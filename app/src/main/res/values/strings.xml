@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_clock">Clock</string>
+    <string name="tab_alarms">Alarms</string>
+    <string name="tab_timers">Timers</string>
+
+    <string name="clock_show_analog">Analog</string>
+    <string name="clock_show_digital">Digital</string>
+    <string name="clock_next_alarm_cd">Next armed alarm</string>
+
+    <string name="alarms_empty">No alarms. Tap + to add one.</string>
+    <string name="alarm_deleted">Alarm deleted</string>
+    <string name="action_undo">Undo</string>
+    <string name="alarm_set_for">Alarm set for %1$s</string>
+
+    <string name="alarm_edit_new">New alarm</string>
+    <string name="alarm_edit_existing">Edit alarm</string>
+    <string name="alarm_edit_repeat">Repeat</string>
+    <string name="alarm_label_hint">Label</string>
+    <string name="alarm_vibrate">Vibrate</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
+    <string name="day_sun">Sun</string>
+
+    <string name="timer_preset_minutes">%1$d min</string>
+    <string name="timer_custom_hint">Minutes</string>
+    <string name="timer_start">Start</string>
+    <string name="timer_invalid_minutes">Enter 1–999 minutes</string>
+    <string name="timers_empty">No timers. Pick a preset or set minutes.</string>
+    <string name="timer_default_label">Timer</string>
+    <string name="timer_done">Done</string>
+    <string name="timer_paused_badge">Paused</string>
+    <string name="timer_pause">Pause</string>
+    <string name="timer_resume">Resume</string>
+    <string name="timer_reset">Reset</string>
+    <string name="timer_delete">Delete</string>
+</resources>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PiercingXX logomark: two Signal-white X's, quarter-height overlap,
+     underlined, on the Ink tile (adaptive-icon background). Geometry from
+     piercingxx-branding/assets/logomark.svg, scaled to the adaptive-icon
+     safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <group
+        android:scaleX="0.72"
+        android:scaleY="0.72"
+        android:pivotX="256"
+        android:pivotY="256">
+        <!-- Top X (center 256,157) -->
+        <path
+            android:pathData="M205.1,106.1 L306.9,207.9"
+            android:strokeColor="@color/pxx_signal"
+            android:strokeWidth="56"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M205.1,207.9 L306.9,106.1"
+            android:strokeColor="@color/pxx_signal"
+            android:strokeWidth="56"
+            android:strokeLineCap="round" />
+        <!-- Bottom X (center 256,292) — quarter-height overlap with the top X -->
+        <path
+            android:pathData="M205.1,241.1 L306.9,342.9"
+            android:strokeColor="@color/pxx_signal"
+            android:strokeWidth="56"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M205.1,342.9 L306.9,241.1"
+            android:strokeColor="@color/pxx_signal"
+            android:strokeWidth="56"
+            android:strokeLineCap="round" />
+        <!-- Underline -->
+        <path
+            android:pathData="M183,424 L329,424"
+            android:strokeColor="@color/pxx_signal"
+            android:strokeWidth="44"
+            android:strokeLineCap="round" />
+    </group>
+</vector>

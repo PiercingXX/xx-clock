@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="setup_title">Set up XX Clock</string>
+
+    <string name="setup_heading">Make sure alarms can ring</string>
+    <string name="setup_subheading">Each check below removes a common way alarms get silenced on modern Android.</string>
+
+    <!-- Nope-Mode warning card -->
+    <string name="setup_info_body">Keep XX Clock OUT of Nope-Mode\'s blocked app list. Nope-Mode suspends packages — a suspended clock cannot ring.</string>
+
+    <string name="setup_btn_allow">Allow</string>
+    <string name="setup_done">Done</string>
+
+    <string name="setup_notifications_title">Notifications</string>
+    <string name="setup_notifications_why">Shows the alarm alert and lets you snooze or dismiss straight from the notification shade.</string>
+
+    <string name="setup_exact_title">Exact alarms</string>
+    <string name="setup_exact_why">Lets an alarm fire at the exact minute instead of being deferred to a later maintenance window.</string>
+
+    <string name="setup_dnd_title">Ring through Do Not Disturb</string>
+    <string name="setup_dnd_why">Alarm sound and vibration break through even while Do Not Disturb is on.</string>
+
+    <string name="setup_full_screen_title">Full-screen alarm display</string>
+    <string name="setup_full_screen_why">Wakes the screen and shows the alarm over the lock screen, so you never sleep through it.</string>
+
+    <string name="setup_battery_title">Battery optimization exemption</string>
+    <string name="setup_battery_why">Stops aggressive battery savers from killing the ringing service in the background.</string>
+</resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">XX Clock</string>
+
+    <!-- Ringing notifications & alert -->
+    <string name="notif_alarm_default_title">Alarm</string>
+    <string name="notif_timer_default_title">Timer</string>
+    <string name="notif_alarm_silenced">Alarm silenced</string>
+    <string name="notif_alarm_missed">Missed alarm</string>
+    <string name="notif_timer_finished">Timer finished</string>
+    <string name="notif_timer_finished_away">A timer finished while you were away</string>
+
+    <!-- Alert actions -->
+    <string name="action_snooze">Snooze</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_add_minute">+1 min</string>
+    <string name="action_snooze_minutes">Snooze %1$d min</string>
+
+    <!-- Alarm alert screen -->
+    <string name="alert_default_label">Alarm</string>
+</resources>

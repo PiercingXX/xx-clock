@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark (default brand mode): Signal-white accent on AMOLED Ink. -->
+<resources>
+    <color name="primary">@color/pxx_signal</color>
+    <color name="on_primary">@color/pxx_ink</color>
+
+    <color name="app_background">@color/pxx_ink</color>
+    <color name="app_surface">@color/pxx_graphite</color>
+    <color name="on_background">@color/pxx_white_90</color>
+    <color name="on_background_muted">@color/pxx_white_50</color>
+    <color name="outline">@color/pxx_white_25</color>
+    <color name="outline_faint">@color/pxx_white_10</color>
+</resources>

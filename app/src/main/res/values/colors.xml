@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App color roles mapped onto PiercingXX tokens (colors_brand.xml).
+     Day values here: Ink accent on Paper. Dark flips in values-night/colors.xml. -->
+<resources>
+    <!-- Accent role. Reserved-accent rule: this is the ONE accent per screen. -->
+    <color name="primary">@color/pxx_ink</color>
+    <color name="on_primary">@color/pxx_signal</color>
+
+    <!-- Ink-on-light opacity ramp — inverse of the white ramp (BRAND-GUIDE §3.2) -->
+    <color name="pxx_ink_10">#1A000000</color>
+    <color name="pxx_ink_25">#40000000</color>
+    <color name="pxx_ink_50">#80000000</color>
+    <color name="pxx_ink_90">#E6000000</color>
+
+    <color name="app_background">@color/pxx_bg_paper</color>
+    <color name="app_surface">@color/pxx_bg_mist</color>
+    <color name="on_background">@color/pxx_ink_90</color>
+    <color name="on_background_muted">@color/pxx_ink_50</color>
+    <color name="outline">@color/pxx_ink_25</color>
+    <color name="outline_faint">@color/pxx_ink_10</color>
+
+    <!-- Always-dark surfaces: alarm alert screen, setup cards, widget, icon tile -->
+    <color name="background_dark">@color/pxx_ink</color>
+    <color name="surface_dark">@color/pxx_graphite</color>
+    <color name="widget_background">@color/pxx_ink_90</color>
+    <color name="widget_text">@color/pxx_white_90</color>
+    <color name="widget_secondary">@color/pxx_white_50</color>
+    <color name="ic_launcher_background">@color/pxx_ink</color>
+</resources>

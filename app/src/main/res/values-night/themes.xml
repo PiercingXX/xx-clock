@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Night copy of Theme.XxClock (styles don't merge across configs).
+         Color roles flip via values-night/colors.xml; ramp surfaces added here. -->
+    <style name="Theme.XxClock" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/primary</item>
+        <item name="colorOnPrimaryContainer">@color/on_primary</item>
+        <item name="colorSecondaryContainer">@color/primary</item>
+        <item name="colorOnSecondaryContainer">@color/on_primary</item>
+        <item name="android:colorBackground">@color/pxx_ink</item>
+        <item name="colorSurface">@color/pxx_ink</item>
+        <item name="colorSurfaceContainerLowest">@color/pxx_ink</item>
+        <item name="colorSurfaceContainerLow">@color/pxx_ink_raised</item>
+        <item name="colorSurfaceContainer">@color/pxx_graphite</item>
+        <item name="colorSurfaceContainerHigh">@color/pxx_graphite</item>
+        <item name="colorSurfaceContainerHighest">@color/pxx_slate</item>
+        <item name="colorOnSurface">@color/pxx_white_90</item>
+        <item name="colorOnSurfaceVariant">@color/pxx_white_50</item>
+        <item name="colorOutline">@color/pxx_white_25</item>
+        <item name="colorOutlineVariant">@color/pxx_white_10</item>
+        <item name="android:fontFamily">@font/jetbrains_mono</item>
+        <item name="fontFamily">@font/jetbrains_mono</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
