@@ -79,6 +79,19 @@
             </intent-filter>
         </receiver>
 
+        <!-- Family theme sync: receives the xx-launcher's theme broadcast
+             (explicitly targeted at this package; exported so a cross-app
+             broadcast can reach it — receiving carries no data out, so the
+             no-INTERNET privacy claim is untouched). -->
+        <receiver
+            android:name=".theme.ThemeSyncReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="xx.launcher.THEME_CHANGED" />
+            </intent-filter>
+        </receiver>
+
         <!-- Home-screen digital clock widget (TextClock based, self-updating). -->
         <receiver
             android:name=".widget.DigitalWidgetProvider"

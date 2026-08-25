@@ -88,3 +88,55 @@ until(nowMs, targetMs): String      // "2 d 7 h 53 m"
 3. No new dependencies. No coroutines/RxJava/Room/Hilt/Compose. org.json + androidx + material only.
 4. Kotlin only. Compile-safe: reference ONLY APIs listed above or standard SDK/androidx/material APIs.
 5. IDs referenced by core: none besides what's listed. If you need a string that exists in strings_core.xml, reuse the key.
+
+## Family theme sync (post-v1 maintenance addition)
+
+Receiver side of the family-wide theme sync driven by the xx-launcher. The
+broadcast is explicitly targeted at this package:
+
+- Action `xx.launcher.THEME_CHANGED`
+- String extra `xx.launcher.extra.THEME_NAME`: "AMOLED Night" / "Graphite" /
+  "Forest Night" / "Ocean Drift" / "Burgundy" (dark, white foreground),
+  "Paper" / "Mist" (light, ink #FF1A1A1A foreground), or "Custom".
+- Int extra `xx.launcher.extra.BACKGROUND`: resolved ground ARGB (present even
+  for Custom).
+- Contrast rule (identical across the family): luminance
+  `0.299r + 0.587g + 0.114b` > 182 → dark foreground #FF1A1A1A, else white.
+
+The preset drives the app's GROUND. XX Clock already renders both looks —
+Paper/Mist day colors in `values/`, a dark flip in `values-night/` — so a dark
+preset flips the app to its night look (`AppCompatDelegate.MODE_NIGHT_YES`)
+and the exact preset ground is painted over window background, root content,
+and status/nav bars; Paper/Mist flip to the day look (whose colors already ARE
+Paper and Mist). "Custom" is honored via the BACKGROUND extra + contrast rule.
+`AlarmAlertActivity` keeps its purpose-built always-dark look; widget and
+notification surfaces are out of scope.
+
+Files (all under `theme/`):
+- `ThemePreset.kt` — pure-Kotlin model: 7 presets (`fromKey`/`fromDisplayName`),
+  contrast rule (`luminance`/`prefersDarkForeground`/`foregroundFor`),
+  `SyncedTheme` + `resolveSyncedTheme(name, backgroundExtra)`.
+- `ThemeStore.kt` — persistence over the `ThemeKeyValueStore` seam; real store
+  is SharedPreferences `xx_clock_theme`.
+- `ThemeSyncReceiver.kt` — manifest-declared, exported, injectable seams
+  (action/name/background extractors, persist, live-apply) so JVM tests drive
+  `onReceive` without mocking Android.
+- `ThemeSyncApplier.kt` — night mode + ground painting on activity
+  post-create/resume via `ActivityLifecycleCallbacks` registered in `ClockApp`;
+  repaints visible activities immediately when a broadcast lands.
+
+This addition amends hard rule 2: the manifest gained the exported
+`.theme.ThemeSyncReceiver` entry and `app/build.gradle.kts` gained
+`testOptions.unitTests.isReturnDefaultValues = true` (family convention, from
+TxxT) so JVM tests can instantiate the `BroadcastReceiver` stub. Still no new
+dependencies, no INTERNET permission (receiving carries no data out).
+
+Tests (JUnit4, pure JVM, seams instead of Robolectric):
+- `theme/ThemePresetTest`: all 7 display names + case-insensitive + unknown/null;
+  stable keys; ground values; dark/light classification vs the contrast rule;
+  luminance weights + exclusive-182 threshold; `resolveSyncedTheme` for named /
+  Custom-dark / Custom-light / Custom-without-background / unknown.
+- `theme/ThemeSyncReceiverTest`: manifest wiring (component declared, exported,
+  action filter, class resolves); persistence routing via seams (named preset,
+  Paper, Custom via contrast rule, wrong action, unknown name); live-apply
+  receives exactly the persisted theme; `ThemeStore` round-trips.

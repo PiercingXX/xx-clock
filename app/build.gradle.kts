@@ -67,6 +67,13 @@ android {
         }
     }
 
+    testOptions {
+        // Let JVM unit tests instantiate android.jar stubs (BroadcastReceiver's
+        // no-arg constructor) instead of throwing "Stub!" — same convention as
+        // TxxT's theme-sync tests. Behavior still comes through injected seams.
+        unitTests.isReturnDefaultValues = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
