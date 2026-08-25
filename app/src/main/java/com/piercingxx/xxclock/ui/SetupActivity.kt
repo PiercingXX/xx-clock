@@ -142,10 +142,13 @@ class SetupActivity : AppCompatActivity() {
     private fun refreshThemeRows() {
         val list = findViewById<LinearLayout>(R.id.theme_preset_list)
         val store = themeStore()
-        val stored = store.load()
+        // Nothing chosen yet is still a definite answer (AMOLED Night), so the
+        // picker always has a checkmark somewhere — it shows what IS set, and
+        // there is no "the system decides" row to point at.
+        val active = ThemeSyncApplier.effectiveTheme(store.load())
         val customGround = store.lastCustomBackground()
-        // A stored theme without a preset key IS the custom ground.
-        val activeKey = stored?.presetKey ?: if (stored != null) CUSTOM_PRESET_KEY else null
+        // A theme without a preset key IS the custom ground.
+        val activeKey = active.presetKey ?: CUSTOM_PRESET_KEY
         for (i in 0 until list.childCount) {
             val row = list.getChildAt(i)
             val key = row.tag as? String ?: continue

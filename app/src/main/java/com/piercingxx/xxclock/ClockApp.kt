@@ -9,8 +9,10 @@ class ClockApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // Launcher-synced theme: set night mode before any activity inflates
-        // and keep every activity painted with the synced ground.
+        // Theme: pin night mode from the CHOSEN theme (or the AMOLED Night
+        // default) before any activity inflates, and keep every activity
+        // painted with that ground. First thing in the process, so nothing can
+        // inflate against the system's day/night state on the way in.
         ThemeSyncApplier.init(this)
         Channels.ensureAll(this)
         // Rebuild scheduling after process death / update; safe to call any time.

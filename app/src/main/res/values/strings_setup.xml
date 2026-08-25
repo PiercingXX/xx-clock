@@ -28,7 +28,7 @@
 
     <!-- In-app theme switcher (family preset set, mirroring the launcher) -->
     <string name="setup_theme_heading">Theme</string>
-    <string name="setup_theme_subheading">The family presets — the same set the launcher broadcasts. Custom reuses the launcher\'s last custom ground.</string>
+    <string name="setup_theme_subheading">The family presets — the same set the launcher broadcasts. What you set stays set: the system dark-mode setting has no say. Custom reuses the launcher\'s last custom ground.</string>
     <string name="theme_custom">Custom</string>
     <string name="theme_active_mark">✓</string>
 </resources>

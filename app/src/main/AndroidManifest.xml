@@ -40,13 +40,17 @@
             </intent-filter>
         </activity>
 
-        <!-- Full-screen alarm alert shown over the lock screen. -->
+        <!-- Full-screen alarm alert shown over the lock screen. Pinned to the
+             non-DayNight Theme.XxClock.AlarmAlert so its buttons and outlines
+             stay readable on the ink ground whatever theme is set, and whatever
+             the system is doing. -->
         <activity
             android:name=".ui.AlarmAlertActivity"
             android:excludeFromRecents="true"
             android:exported="false"
             android:launchMode="singleTask"
             android:showWhenLocked="true"
+            android:theme="@style/Theme.XxClock.AlarmAlert"
             android:turnScreenOn="true" />
 
         <!-- Setup / permissions onboarding screen. -->

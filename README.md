@@ -11,7 +11,7 @@ package: com.piercingxx.xxclock        minSdk 29 (Android 10)
 version 1.0                            target/compileSdk 35
 ```
 
-<img src="docs/images/screenshot.png" width="270" alt="XX Clock on a Pixel 6 — Paper theme by day">
+<img src="docs/images/screenshot.png" width="270" alt="XX Clock on a Pixel 6, with the Paper theme set">
 
 ## Features
 
@@ -56,18 +56,44 @@ app has an exported receiver that persists the choice and repaints. Eight
 presets: AMOLED Night, Graphite, Forest Night, Ocean Drift, Burgundy, Paper,
 Mist, Custom.
 
-XX Clock now also picks its own. **Setup → Theme** lists all eight; a manual
-pick resolves to exactly the `SyncedTheme` a matching broadcast would produce
-and goes down the same persist-and-repaint path, so nothing downstream can tell
-the two apart. Custom reuses the launcher's last broadcast custom ground, and
-is inert until there has been one. Before this the app could only follow a
-launcher broadcast — there was no in-app switcher at all.
+XX Clock also picks its own. **Setup → Theme** lists all eight; a manual pick
+resolves to exactly the `SyncedTheme` a matching broadcast would produce and
+goes down the same persist-and-repaint path, so nothing downstream can tell the
+two apart. Last writer wins — a later broadcast overrides an earlier tap, and a
+later tap overrides an earlier broadcast. Custom reuses the launcher's last
+broadcast custom ground, and is inert until there has been one.
 
-Left alone, XX Clock follows the system dark-mode setting: Paper by day, ink by
-night. It is the one app in the family that is not always black, which is why
-the screenshot above is white. A dark preset flips it to `MODE_NIGHT_YES` and
-then overpaints the exact preset ground; Paper and Mist flip it to
-`MODE_NIGHT_NO`, whose resources already *are* Paper and Mist.
+**The ground is a choice, never an observation.** The launcher and the picker
+are the only two inputs. XX Clock does not read the system dark-mode setting,
+an auto-dark sunrise/sunset schedule, or the time it is displaying. Set Paper
+at noon and it is still Paper at midnight with system dark mode on. Never
+chosen anything, or just wiped app data? AMOLED Night — the family default the
+sibling apps start at. The screenshot above is Paper because Paper was set, not
+because the sun was up.
+
+Mechanically: a dark theme pins `MODE_NIGHT_YES` and then overpaints the exact
+preset ground; Paper and Mist pin `MODE_NIGHT_NO`, whose resources already
+*are* Paper and Mist. The `values-night/` set stays, but it is an internal
+switch thrown from the stored theme's `isDark` — the app is never left on
+`MODE_NIGHT_FOLLOW_SYSTEM`. The full-screen alarm alert is a deliberate
+constant: its own non-DayNight theme, ink ground, Signal-white digits. 3 a.m.
+is not the moment for a Paper screen.
+
+Painting the right ground turned out not to be enough. Force dark — the
+renderer inverting an already-drawn light window when the *system* is in night
+mode — got Paper anyway: correct color stored, correct color painted, then
+lightness-inverted to a dark warm brown with white text. The documented theme
+opt-out, `android:forceDarkAllowed=false`, did not stop it on a Pixel 6 running
+GrapheneOS, so every window this app opens also clears
+`View.setForceDarkAllowed` on its decor view — activities, the alarm alert, and
+dialogs, each of which owns a separate window and has to ask separately. The
+theme attribute stays as stated intent; the decor-view flag is the enforcement.
+It works one layer lower, on the RenderNode, and consults no theme,
+configuration or context on the way.
+
+This is a behavior change. XX Clock used to fall back to the system dark-mode
+setting when nothing had been chosen — Paper by day, ink by night. It no longer
+does, at any time, for any reason.
 
 Both activities set `fitsSystemWindows`, because targetSdk 35 draws edge to
 edge and otherwise the Setup gear renders underneath the status bar. Fixed and
@@ -110,14 +136,17 @@ Toolchain: JDK 21 running Gradle 8.11.1, JVM target 17, Android SDK platform 35
 ```bash
 export ANDROID_HOME=$HOME/Android/Sdk
 ./gradlew assembleRelease       # -> app/build/outputs/apk/release/
-./gradlew testDebugUnitTest     # 81 JVM unit tests
+./gradlew testDebugUnitTest     # 95 JVM unit tests
 ./gradlew lint                  # 0 errors
 ```
 
-The 81 cover weekly-recurrence math (`time/NextOccurrence`), timer deadline
-math, weekday-mask packing, the ringtone fallback order, the theme preset table
-and the broadcast receiver's parsing. Everything that could be written as a
-pure function was, so it could be tested without a device.
+The 95 cover weekly-recurrence math (`time/NextOccurrence`), timer deadline
+math, weekday-mask packing, the ringtone fallback order, the theme preset
+table, the broadcast receiver's parsing, and the theme-authority rule — an
+unset theme resolves to AMOLED Night, the night mode resolves from the chosen
+theme's `isDark` and nothing else, and the force-dark revocation reaches every
+window including the alarm screen. Everything that could be written as a pure
+function was, so it could be tested without a device.
 
 Signing: no keystore is committed to this repo. Release builds are signed only
 if you supply credentials via a gitignored `keystore.properties` at the repo
@@ -140,7 +169,7 @@ org.json (no Room). See `CONTRACT.md` for the component map:
   full-screen-intent notification, alarm-stream audio, vibration
 - `audio/RingCandidates.kt` — the pure "never ring silent" fallback ordering
 - `theme/` — preset table, store, broadcast receiver, and the applier that
-  drives night mode and the ground color
+  pins night mode and the ground color from the chosen theme (never the system)
 - `widget/DigitalWidgetProvider.kt` — RemoteViews widget
 - `ui/SetupActivity.kt` — permission checklist, theme picker, Nope-Mode advisory
 

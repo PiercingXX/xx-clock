@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Night copy of Theme.XxClock (styles don't merge across configs).
-         Color roles flip via values-night/colors.xml; ramp surfaces added here. -->
+         Color roles flip via values-night/colors.xml; ramp surfaces added here.
+
+         Selected when the CHOSEN theme is dark, never because the OS is: the
+         app pins MODE_NIGHT_YES/NO from the stored theme and is never left on
+         FOLLOW_SYSTEM. See theme/ThemeSyncApplier.kt. -->
     <style name="Theme.XxClock" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/on_primary</item>
@@ -24,5 +28,7 @@
         <item name="fontFamily">@font/jetbrains_mono</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
+        <!-- Matches the day copy: no platform recoloring, in either direction. -->
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 </resources>

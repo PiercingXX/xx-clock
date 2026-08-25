@@ -112,6 +112,10 @@ Paper and Mist). "Custom" is honored via the BACKGROUND extra + contrast rule.
 `AlarmAlertActivity` keeps its purpose-built always-dark look; widget and
 notification surfaces are out of scope.
 
+The night resource set is selected by the app's own pinned night mode, never by
+the OS. See **Theme authority** at the end of this document — that section is a
+hard rule and overrides any reading of the paragraph above.
+
 Files (all under `theme/`):
 - `ThemePreset.kt` — pure-Kotlin model: 7 presets (`fromKey`/`fromDisplayName`),
   contrast rule (`luminance`/`prefersDarkForeground`/`foregroundFor`),
@@ -123,13 +127,21 @@ Files (all under `theme/`):
   `onReceive` without mocking Android.
 - `ThemeSyncApplier.kt` — night mode + ground painting on activity
   post-create/resume via `ActivityLifecycleCallbacks` registered in `ClockApp`;
-  repaints visible activities immediately when a broadcast lands.
+  repaints visible activities immediately when a broadcast lands. Also owns the
+  authority rules: `DEFAULT_THEME` (AMOLED Night), `effectiveTheme(stored)`
+  (never null), `activeTheme(context)`, `nightModeFor(theme)` (YES/NO only),
+  and `disableForceDark(window)` (applied to every activity and dialog window).
 
 This addition amends hard rule 2: the manifest gained the exported
 `.theme.ThemeSyncReceiver` entry and `app/build.gradle.kts` gained
 `testOptions.unitTests.isReturnDefaultValues = true` (family convention, from
 TxxT) so JVM tests can instantiate the `BroadcastReceiver` stub. Still no new
 dependencies, no INTERNET permission (receiving carries no data out).
+
+The theme-authority fix amends hard rule 2 further: `values/themes.xml` gained
+the `Theme.XxClock.AlarmAlert` style and `android:forceDarkAllowed=false`,
+`values-night/themes.xml` gained the same opt-out, and the manifest's
+`AlarmAlertActivity` entry gained `android:theme`. Still no new dependencies.
 
 Tests (JUnit4, pure JVM, seams instead of Robolectric):
 - `theme/ThemePresetTest`: all 7 display names + case-insensitive + unknown/null;
@@ -140,3 +152,99 @@ Tests (JUnit4, pure JVM, seams instead of Robolectric):
   action filter, class resolves); persistence routing via seams (named preset,
   Paper, Custom via contrast rule, wrong action, unknown name); live-apply
   receives exactly the persisted theme; `ThemeStore` round-trips.
+- `theme/ThemeSyncApplierTest`: the authority rule — unset resolves to AMOLED
+  Night (directly and through an empty `ThemeStore`); a chosen theme always
+  wins; a broadcast survives a store round-trip unchanged; night mode is a
+  function of `isDark` alone; a light pick pins `MODE_NIGHT_NO` (the
+  launcher-Paper-under-system-dark case); nothing — 7 presets, the default, and
+  the full 256-step gray ramp as Custom grounds — resolves to
+  `MODE_NIGHT_FOLLOW_SYSTEM`. Plus the declarations the rule leans on, asserted
+  against the real XML/source: `forceDarkAllowed=false` in both theme configs,
+  the alarm alert pinned to a non-DayNight style with no night override, the
+  decor-view force-dark revocation reaching every activity *before* the
+  alarm-alert early return, and the dialog-window guard.
+
+## Theme authority (hard rule)
+
+The ground is a choice, never an observation. Exactly two inputs may move it:
+
+1. An `xx.launcher.THEME_CHANGED` broadcast.
+2. An in-app pick in Setup → Theme, which resolves to the identical
+   `SyncedTheme` and goes down the identical persist-and-repaint path.
+
+Last writer wins between the two. There is no "manual beats sync" precedence
+(that is TxxT's model, not this one).
+
+The system's day/night state is NOT an input, at any point, on any surface.
+Not the system dark-mode toggle, not an auto-dark sunrise/sunset schedule, not
+the time the app happens to be displaying. A theme set at noon renders
+identically at midnight.
+
+Consequences any future change must preserve:
+
+- Nothing chosen yet (fresh install, cleared data) resolves to
+  `ThemeSyncApplier.DEFAULT_THEME` = **AMOLED Night**, the family default. The
+  old behavior — falling through to the `DayNight` default and tracking the
+  system — was the bug, reproduced on-device as Paper ground in system day mode
+  and black in system night mode with no user choice involved.
+- `AppCompatDelegate` is never left on `MODE_NIGHT_FOLLOW_SYSTEM`.
+  `ThemeSyncApplier.nightModeFor` is total over `SyncedTheme.isDark` and has no
+  null/unknown branch that could return it.
+- `values-night/` stays, as the resource mechanism for a dark theme. Its
+  selector is the app's own pinned night mode, i.e. the stored theme's
+  `isDark`; the uiMode qualifier is an internal switch, not an OS signal.
+- Force dark is revoked at the **window** level: every window this app opens
+  clears `View.setForceDarkAllowed` on its decor view — every activity
+  (`AlarmAlertActivity` included, before the ground-painting early return) and
+  every dialog, via a recursive `FragmentLifecycleCallbacks` guard. A window
+  added anywhere in this app must do the same; a `PopupWindow` or a bare
+  `Dialog` would be a new, unguarded window.
+- Both theme configs also set `android:forceDarkAllowed=false`. Keep both.
+  The theme attribute is declaration-level intent and was NOT sufficient in
+  practice: on a Pixel 6 / GrapheneOS, a correctly stored, resolved and painted
+  Paper ground still rendered lightness-inverted under system dark mode with
+  the attribute compiled into both style variants. Do not "fix" a future
+  recurrence by adding `android:isLightTheme=false` — that attribute feeds the
+  same `ViewRootImpl.updateForceDarkMode()` lookup that already failed to see
+  our value. The decor-view flag works one layer lower, on the RenderNode, and
+  is the enforcement.
+- If the decor-view flag ever fails too, the only remaining move is to stop
+  handing the platform a light window at all: drop `values-night/`, ship one
+  never-`isLightTheme` resource set, and repaint every colored surface
+  programmatically from the resolved theme — xx-calculator's model. That is a
+  much larger change (every view in 3 fragments and 4 layouts needs a palette
+  callback) and should be a deliberate, separate piece of work, not a patch.
+- `AlarmAlertActivity` is pinned to `Theme.XxClock.AlarmAlert`
+  (parent `Theme.Material3.Dark.NoActionBar`, no `values-night/` override) so
+  its Material chrome matches its hardcoded ink ground. Constant by design,
+  with no ambient input of its own.
+- Widget and notification surfaces draw only from `values/`-only colors
+  (`widget_background`, `widget_text`, `widget_secondary`, `background_dark`,
+  `surface_dark`), so they do not vary by configuration either. Do not add
+  `values-night/` overrides for those names.
+
+### The device setting that beats all of the above
+
+Both opt-out layers can be defeated from outside the app. Android's
+accessibility **force-invert colours** (`accessibility_force_invert_color_enabled`
+in the `secure` namespace) inverts light content app-wide, and because it is an
+accessibility feature it deliberately outranks anything an app declares — the
+theme attribute and the decor-view flag are both ignored while it is on.
+
+Observed on the Pixel 6 test device: with a launcher-set Paper ground the app
+painted `#F3EEE2` correctly and the screen still rendered `rgb(22, 18, 5)`, the
+same cream inverted, with the ink text flipped to white. xx-calculator — which
+already ships a single ink resource set and repaints programmatically, the
+escalation described above — inverted to the identical value. Two unrelated
+apps, one transform: that is the tell that the cause is the device, not the app.
+
+The per-app exclusion list lives in the `system` namespace:
+
+```sh
+adb shell settings get system accessibility_force_invert_color_override_packages_to_disable
+```
+
+The family packages were appended to it. **This lives in device settings, not in
+this repo**, so a factory reset, a new phone, or a re-flash brings the symptom
+straight back and it will look like a regression in this code. Check that
+setting before changing anything in `theme/`.

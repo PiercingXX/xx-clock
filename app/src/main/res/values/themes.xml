@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- PiercingXX: monochrome + one accent. Strong emphasis inverts
-         (Signal block, Ink text — see colorOnPrimary / secondaryContainer). -->
+         (Signal block, Ink text — see colorOnPrimary / secondaryContainer).
+
+         DayNight here does NOT mean "follow the system". The night qualifier
+         is an internal switch ThemeSyncApplier throws from the CHOSEN theme's
+         isDark (MODE_NIGHT_YES/NO, pinned before the first activity inflates
+         and never left on FOLLOW_SYSTEM). This day copy is what a Paper/Mist
+         pick selects; values-night/themes.xml is what a dark pick selects. -->
     <style name="Theme.XxClock" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/on_primary</item>
@@ -24,5 +30,41 @@
         <item name="fontFamily">@font/jetbrains_mono</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
+        <!-- The last way the system could still recolor a light pick: with
+             system dark mode on, the platform force-darks light-themed views.
+             A Paper pick must stay Paper at midnight, so opt out. (API 29 =
+             minSdk, so no -v29 variant is needed.) -->
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
+
+    <!-- Full-screen alarm alert. Deliberately NOT DayNight: the layout hardcodes
+         an ink ground and Signal-white digits, so its Material chrome (the
+         snooze/stop buttons, the outline) must be dark too. Under the shared
+         DayNight theme a light pick — or, before the theme became a pure
+         choice, plain daytime — gave this screen ink-on-ink buttons. Constant
+         by design, with no time-of-day input of its own. -->
+    <style name="Theme.XxClock.AlarmAlert" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/pxx_signal</item>
+        <item name="colorOnPrimary">@color/pxx_ink</item>
+        <item name="colorPrimaryContainer">@color/pxx_signal</item>
+        <item name="colorOnPrimaryContainer">@color/pxx_ink</item>
+        <item name="colorSecondaryContainer">@color/pxx_signal</item>
+        <item name="colorOnSecondaryContainer">@color/pxx_ink</item>
+        <item name="android:colorBackground">@color/background_dark</item>
+        <item name="colorSurface">@color/background_dark</item>
+        <item name="colorSurfaceContainerLowest">@color/background_dark</item>
+        <item name="colorSurfaceContainerLow">@color/pxx_ink_raised</item>
+        <item name="colorSurfaceContainer">@color/surface_dark</item>
+        <item name="colorSurfaceContainerHigh">@color/surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/pxx_slate</item>
+        <item name="colorOnSurface">@color/pxx_white_90</item>
+        <item name="colorOnSurfaceVariant">@color/pxx_white_50</item>
+        <item name="colorOutline">@color/pxx_white_25</item>
+        <item name="colorOutlineVariant">@color/pxx_white_10</item>
+        <item name="android:fontFamily">@font/jetbrains_mono</item>
+        <item name="fontFamily">@font/jetbrains_mono</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 </resources>
