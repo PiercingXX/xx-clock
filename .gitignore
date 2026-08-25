@@ -11,3 +11,9 @@ captures/
 
 # Local config
 local.properties
+
+# Signing material & built artifacts — never commit
+*.jks
+*.keystore
+*.apk
+keystore.properties

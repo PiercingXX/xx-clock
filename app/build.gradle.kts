@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,22 +7,50 @@ plugins {
 
 android {
     namespace = "com.piercingxx.xxclock"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.piercingxx.xxclock"
         minSdk = 29
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
     }
 
-    signingConfigs {
-        create("release") {
-            storeFile = rootProject.file("keystore/xxclock.jks")
-            storePassword = "REDACTED-ROTATED-KEY"
-            keyAlias = "xxclock"
-            keyPassword = "REDACTED-ROTATED-KEY"
+    // Release signing is resolved from (in order):
+    //   1. A gitignored keystore.properties at the repo root
+    //      (storeFile / storePassword / keyAlias / keyPassword), or
+    //   2. Environment variables XXCLOCK_STORE_FILE / XXCLOCK_STORE_PASSWORD /
+    //      XXCLOCK_KEY_ALIAS / XXCLOCK_KEY_PASSWORD.
+    // If neither is present the release build type stays unsigned (build an
+    // unsigned APK and sign it yourself, or use the debug build for testing).
+    val keystorePropsFile = rootProject.file("keystore.properties")
+    val keystoreProps = Properties().apply {
+        if (keystorePropsFile.exists()) {
+            keystorePropsFile.inputStream().use { load(it) }
+        }
+    }
+
+    fun signingValue(propKey: String, envKey: String): String? =
+        keystoreProps.getProperty(propKey) ?: System.getenv(envKey)
+
+    val releaseStoreFile = signingValue("storeFile", "XXCLOCK_STORE_FILE")
+    val releaseStorePassword = signingValue("storePassword", "XXCLOCK_STORE_PASSWORD")
+    val releaseKeyAlias = signingValue("keyAlias", "XXCLOCK_KEY_ALIAS")
+    val releaseKeyPassword = signingValue("keyPassword", "XXCLOCK_KEY_PASSWORD")
+    val hasReleaseSigning = !releaseStoreFile.isNullOrBlank() &&
+        !releaseStorePassword.isNullOrBlank() &&
+        !releaseKeyAlias.isNullOrBlank() &&
+        !releaseKeyPassword.isNullOrBlank()
+
+    if (hasReleaseSigning) {
+        signingConfigs {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
         }
     }
 
@@ -31,7 +61,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

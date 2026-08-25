@@ -8,8 +8,7 @@ no analytics — verifiable in the manifest.
 
 ```
 package: com.piercingxx.xxclock        minSdk 29 (Android 10)
-version 1.0                            target/compileSdk 34
-APK: XX-Clock-v1.0-release.apk         signed with keystore/xxclock.jks
+version 1.0                            target/compileSdk 35
 ```
 
 ## Features
@@ -55,7 +54,7 @@ so the two compose cleanly when the clock isn't suspended.
 
 ## Sideload onto GrapheneOS
 
-1. Copy `XX-Clock-v1.0-release.apk` to the phone (USB, Syncthing, etc.).
+1. Build the APK (see below) and copy it to the phone (USB, Syncthing, etc.).
 2. Open it from **Files** (or Vanadium). When prompted, allow
    **Install unknown apps** for that source — one-time per-app grant.
 3. Install. First launch asks for notification permission — allow it. Then open
@@ -70,17 +69,22 @@ so the two compose cleanly when the clock isn't suspended.
 
 ## Build from source
 
-Toolchain: JDK 17, Android SDK platform 34 + build-tools 34.0.0, Gradle 8.7
-(AGP 8.5.2, Kotlin 1.9.24).
+Toolchain: JDK 17, Android SDK platform 35, Gradle 8.11.1
+(AGP 8.9.1, Kotlin 2.1.20).
 
 ```bash
-gradle assembleRelease          # -> app/build/outputs/apk/release/app-release.apk
-gradle testDebugUnitTest        # 37 JVM unit tests (recurrence/timer/mask math)
-gradle lint                     # 0 errors, 0 warnings
+./gradlew assembleRelease       # -> app/build/outputs/apk/release/
+./gradlew testDebugUnitTest     # 37 JVM unit tests (recurrence/timer/mask math)
+./gradlew lint                  # 0 errors, 0 warnings
 ```
 
-Signing: `keystore/xxclock.jks`, alias `xxclock`, store/key password
-`REDACTED-ROTATED-KEY` (fine for personal sideloading; rotate before distributing).
+Signing: no keystore is committed to this repo. Release builds are signed only
+if you supply credentials via a gitignored `keystore.properties` at the repo
+root (`storeFile` / `storePassword` / `keyAlias` / `keyPassword`) or via the
+environment variables `XXCLOCK_STORE_FILE` / `XXCLOCK_STORE_PASSWORD` /
+`XXCLOCK_KEY_ALIAS` / `XXCLOCK_KEY_PASSWORD`. Without either, the release APK
+is built unsigned — sign it yourself with `apksigner`, or sideload the debug
+build for testing.
 
 ## Architecture notes
 

@@ -1,6 +1,6 @@
 # xx-clock — Build Contract (v1)
 
-Package: `com.piercingxx.xxclock` · minSdk 29 · target/compile 34 · Kotlin 1.9.24 · classic Views · Material3.
+Package: `com.piercingxx.xxclock` · minSdk 29 · target/compile 35 · Kotlin 2.1.20 · classic Views · Material3.
 NO INTERNET permission (privacy parity with Nope-Mode). No Room, no coroutines, no Compose, no GMS.
 
 ## Architecture (already implemented — DO NOT re-implement)
