@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">XX Clock</string>
+    <string name="app_name">XX-Clock</string>
 
     <!-- Ringing notifications & alert -->
     <string name="notif_alarm_default_title">Alarm</string>
