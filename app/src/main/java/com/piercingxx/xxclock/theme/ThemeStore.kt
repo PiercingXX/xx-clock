@@ -49,7 +49,20 @@ class ThemeStore(private val kv: ThemeKeyValueStore) {
         kv.putString(KEY_BACKGROUND, theme.background.toString())
         kv.putBoolean(KEY_IS_DARK, theme.isDark)
         kv.putString(KEY_PRESET, theme.presetKey)
+        if (theme.presetKey == null) {
+            // Remember the custom ground separately so the in-app switcher's
+            // "Custom" row can restore it after the user tries a named preset
+            // (the active-theme slot above is overwritten by every save).
+            kv.putString(KEY_CUSTOM_BACKGROUND, theme.background.toString())
+        }
     }
+
+    /**
+     * The most recent custom ground ever saved (launcher broadcast or in-app
+     * re-pick), or null when the launcher never sent one. Survives named-preset
+     * saves — see [save].
+     */
+    fun lastCustomBackground(): Long? = kv.getString(KEY_CUSTOM_BACKGROUND)?.toLongOrNull()
 
     /** The persisted theme, or null when no launcher broadcast has ever landed. */
     fun load(): SyncedTheme? {
@@ -68,5 +81,6 @@ class ThemeStore(private val kv: ThemeKeyValueStore) {
         const val KEY_BACKGROUND = "background"
         const val KEY_IS_DARK = "is_dark"
         const val KEY_PRESET = "preset_key"
+        const val KEY_CUSTOM_BACKGROUND = "custom_background"
     }
 }

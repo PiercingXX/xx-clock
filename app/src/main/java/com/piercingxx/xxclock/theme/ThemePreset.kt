@@ -44,6 +44,14 @@ enum class ThemePreset(
 /** Display name the launcher broadcasts for a user-picked custom ground. */
 const val CUSTOM_THEME_NAME = "Custom"
 
+/**
+ * Stable key for the family's eighth preset, "Custom", in the in-app switcher.
+ * Deliberately NOT a [ThemePreset] entry: Custom has no ground of its own — it
+ * always resolves through a remembered background (the launcher's last custom
+ * broadcast) plus the contrast rule, exactly like the broadcast path.
+ */
+const val CUSTOM_PRESET_KEY = "custom"
+
 /** Dark (near-black) foreground used over light grounds — family contrast rule. */
 const val FOREGROUND_INK: Long = 0xFF1A1A1A
 
@@ -100,6 +108,36 @@ fun resolveSyncedTheme(displayName: String?, backgroundExtra: Long?): SyncedThem
     }
     if (CUSTOM_THEME_NAME.equals(displayName, ignoreCase = true) && backgroundExtra != null) {
         return SyncedTheme(backgroundExtra, isDark = !prefersDarkForeground(backgroundExtra))
+    }
+    return null
+}
+
+/**
+ * The full family switcher set, in display order: the seven named presets plus
+ * [CUSTOM_PRESET_KEY]. The in-app picker builds its rows from this list so the
+ * enum stays the single source of truth and the eight-preset family contract
+ * is testable on the JVM.
+ */
+fun manualPresetKeys(): List<String> = ThemePreset.entries.map { it.key } + CUSTOM_PRESET_KEY
+
+/**
+ * Resolve an in-app manual pick to the SAME [SyncedTheme] the corresponding
+ * launcher broadcast would produce — that identity is what makes a manual pick
+ * indistinguishable downstream (ThemeStore + ThemeSyncApplier see one shape).
+ *
+ * A named preset resolves to its own ground and classification. Custom reuses
+ * [lastCustomBackground] (the launcher's most recent custom ground, remembered
+ * by ThemeStore) through the contrast rule; with no remembered ground there is
+ * nothing sensible to paint, so Custom — like an unknown key — resolves to
+ * null and the pick is a no-op.
+ */
+fun resolveManualTheme(presetKey: String?, lastCustomBackground: Long? = null): SyncedTheme? {
+    val preset = ThemePreset.fromKey(presetKey)
+    if (preset != null) {
+        return SyncedTheme(preset.background, preset.isDark, preset.key)
+    }
+    if (presetKey == CUSTOM_PRESET_KEY && lastCustomBackground != null) {
+        return SyncedTheme(lastCustomBackground, isDark = !prefersDarkForeground(lastCustomBackground))
     }
     return null
 }

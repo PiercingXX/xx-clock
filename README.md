@@ -1,15 +1,17 @@
 # XX Clock
 
-> An alarm clock that answers to you, not to a cloud.
+> It wakes you up and then shuts up.
 
 A cleanroom, offline-first clock / alarm / timer app for Android, built to be
-sideloaded onto **GrapheneOS**. No Google Play Services, no INTERNET permission,
-no analytics — verifiable in the manifest.
+sideloaded onto **GrapheneOS**. No Google Play Services, no INTERNET
+permission, no analytics — verifiable in the manifest, and in the built APK:
 
 ```
 package: com.piercingxx.xxclock        minSdk 29 (Android 10)
 version 1.0                            target/compileSdk 35
 ```
+
+<img src="docs/images/screenshot.png" width="270" alt="XX Clock on a Pixel 6 — Paper theme by day">
 
 ## Features
 
@@ -21,6 +23,14 @@ version 1.0                            target/compileSdk 35
   one-shot or repeating; snooze (10 min) and dismiss from the full-screen
   alert or the notification; gradual volume ramp; auto-silence after 10 min;
   "Alarm set for …" confirmation snackbar.
+- **Per-alarm ringtone** — each alarm carries its own tone, chosen through the
+  system alarm picker (built-in tones plus anything in `/sdcard/Ringtones`).
+  At ring time the player walks chosen tone → system alarm default →
+  notification default, dropping blanks and duplicates. A tone whose file was
+  deleted or whose provider vanished falls through to the next candidate, so an
+  alarm cannot ring silent because of a stale pick. The ordering rule lives in
+  `audio/RingCandidates.kt` with no `android.*` imports, so it is tested on the
+  JVM rather than hoped at.
 - **Timers** — presets (1/3/5/10 min) + custom duration; multiple simultaneous
   timers; pause/resume/+1 min/reset; wall-clock deadlines survive process death;
   "+1 min" and "Stop" on the ringing notification.
@@ -37,6 +47,31 @@ version 1.0                            target/compileSdk 35
      allows through by default (same as Pixel Clock).
   2. Notification channels are created with `setBypassDnd(true)` — effective once
      you grant the app **Do Not Disturb access** (Setup screen walks you through it).
+
+## Theming
+
+Nine apps in the family share one theme contract. XX-Launcher broadcasts
+`xx.launcher.THEME_CHANGED` carrying a theme name and a background ARGB; every
+app has an exported receiver that persists the choice and repaints. Eight
+presets: AMOLED Night, Graphite, Forest Night, Ocean Drift, Burgundy, Paper,
+Mist, Custom.
+
+XX Clock now also picks its own. **Setup → Theme** lists all eight; a manual
+pick resolves to exactly the `SyncedTheme` a matching broadcast would produce
+and goes down the same persist-and-repaint path, so nothing downstream can tell
+the two apart. Custom reuses the launcher's last broadcast custom ground, and
+is inert until there has been one. Before this the app could only follow a
+launcher broadcast — there was no in-app switcher at all.
+
+Left alone, XX Clock follows the system dark-mode setting: Paper by day, ink by
+night. It is the one app in the family that is not always black, which is why
+the screenshot above is white. A dark preset flips it to `MODE_NIGHT_YES` and
+then overpaints the exact preset ground; Paper and Mist flip it to
+`MODE_NIGHT_NO`, whose resources already *are* Paper and Mist.
+
+Both activities set `fitsSystemWindows`, because targetSdk 35 draws edge to
+edge and otherwise the Setup gear renders underneath the status bar. Fixed and
+verified on a Pixel 6.
 
 ## Nope-Mode integration
 
@@ -69,14 +104,20 @@ so the two compose cleanly when the clock isn't suspended.
 
 ## Build from source
 
-Toolchain: JDK 17, Android SDK platform 35, Gradle 8.11.1
+Toolchain: JDK 21 running Gradle 8.11.1, JVM target 17, Android SDK platform 35
 (AGP 8.9.1, Kotlin 2.1.20).
 
 ```bash
+export ANDROID_HOME=$HOME/Android/Sdk
 ./gradlew assembleRelease       # -> app/build/outputs/apk/release/
-./gradlew testDebugUnitTest     # 37 JVM unit tests (recurrence/timer/mask math)
-./gradlew lint                  # 0 errors, 0 warnings
+./gradlew testDebugUnitTest     # 81 JVM unit tests
+./gradlew lint                  # 0 errors
 ```
+
+The 81 cover weekly-recurrence math (`time/NextOccurrence`), timer deadline
+math, weekday-mask packing, the ringtone fallback order, the theme preset table
+and the broadcast receiver's parsing. Everything that could be written as a
+pure function was, so it could be tested without a device.
 
 Signing: no keystore is committed to this repo. Release builds are signed only
 if you supply credentials via a gitignored `keystore.properties` at the repo
@@ -97,8 +138,11 @@ org.json (no Room). See `CONTRACT.md` for the component map:
 - `alarm/AlarmCoordinator.kt` — fire/snooze/dismiss/reconcile state machine
 - `service/RingService.kt` + `audio/KlaxonPlayer.kt` — CATEGORY_ALARM
   full-screen-intent notification, alarm-stream audio, vibration
+- `audio/RingCandidates.kt` — the pure "never ring silent" fallback ordering
+- `theme/` — preset table, store, broadcast receiver, and the applier that
+  drives night mode and the ground color
 - `widget/DigitalWidgetProvider.kt` — RemoteViews widget
-- `ui/SetupActivity.kt` — permission checklist + Nope-Mode advisory
+- `ui/SetupActivity.kt` — permission checklist, theme picker, Nope-Mode advisory
 
 ## Branding
 
@@ -120,5 +164,4 @@ platform patterns.
 
 - One-shot alarms whose fire window passes while powered off are silently
   rescheduled to tomorrow (recurring alarms always keep their next occurrence).
-- Alarm sound picker not yet exposed — uses the system default alarm sound.
 - English-only day summaries.

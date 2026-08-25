@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One row of the in-app theme switcher (SetupActivity's Theme card):
+     ground swatch, preset name, and a text checkmark on the active preset.
+     Inflated once per family preset so the ThemePreset enum stays the single
+     source of truth for the row set. Always-dark card text (widget_* colors),
+     matching the rest of the setup screen. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="44dp"
+    android:orientation="horizontal"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp">
+
+    <View
+        android:id="@+id/theme_row_swatch"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:background="@drawable/theme_swatch"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/theme_row_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:textColor="@color/widget_text"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/theme_row_check"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/theme_active_mark"
+        android:textColor="@color/pxx_signal"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:visibility="invisible" />
+</LinearLayout>

@@ -12,6 +12,11 @@ import java.util.Locale
  * daysMask == 0 means a one-shot alarm (fires once at the next matching time).
  * The source of truth is (hour, minute, daysMask) — never an absolute fire time;
  * the next occurrence is always computed fresh (see time/NextOccurrence).
+ *
+ * [soundUri] is the per-alarm ringtone as a URI string, or null for the
+ * system default alarm sound. A string (not android.net.Uri) keeps the model
+ * pure Kotlin/JVM-testable; only the playback edge (KlaxonPlayer) parses it,
+ * and it falls back to the default when the URI no longer resolves.
  */
 data class Alarm(
     val id: Long,
@@ -21,6 +26,7 @@ data class Alarm(
     val label: String,
     val enabled: Boolean,
     val vibrate: Boolean,
+    val soundUri: String? = null,
 ) {
     val repeating: Boolean get() = daysMask != 0
 

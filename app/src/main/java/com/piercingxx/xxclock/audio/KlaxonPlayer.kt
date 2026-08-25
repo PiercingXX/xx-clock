@@ -6,6 +6,7 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -35,10 +36,14 @@ class KlaxonPlayer(private val context: Context) {
     private val handler = Handler(Looper.getMainLooper())
     private var rampStep = 0L
 
-    /** @return true when audio playback actually started (vibration may still run on false). */
-    fun start(vibrate: Boolean, gradualVolume: Boolean): Boolean {
+    /**
+     * @param soundUri per-alarm ringtone URI string, or null for the system
+     *   default alarm sound (see [ringCandidates] for the fallback order).
+     * @return true when audio playback actually started (vibration may still run on false).
+     */
+    fun start(vibrate: Boolean, gradualVolume: Boolean, soundUri: String? = null): Boolean {
         requestAudioFocus()
-        val audioStarted = startPlayback(gradualVolume)
+        val audioStarted = startPlayback(gradualVolume, soundUri)
         if (vibrate) startVibration()
         return audioStarted
     }
@@ -67,17 +72,32 @@ class KlaxonPlayer(private val context: Context) {
 
     /**
      * Never throws: a corrupt/missing alarm sound must not crash the ring path.
-     * Falls back to the notification default, then gives up audio gracefully
-     * (vibration continues, service stays foreground).
+     * Tries the per-alarm tone first, then the system alarm default, then the
+     * notification default (the [ringCandidates] order), so a chosen tone that
+     * no longer resolves — deleted file, revoked permission — still rings with
+     * the default rather than firing silently. Gives up audio gracefully after
+     * that (vibration continues, service stays foreground).
      */
-    private fun startPlayback(gradualVolume: Boolean): Boolean {
+    private fun startPlayback(gradualVolume: Boolean, soundUri: String?): Boolean {
+        val candidates = ringCandidates(
+            chosenUri = soundUri,
+            defaultAlarmUri = runCatching {
+                RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_ALARM)?.toString()
+            }.getOrNull(),
+            defaultNotificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)?.toString(),
+        )
+        for (candidate in candidates) {
+            if (tryStartPlayback(candidate, gradualVolume)) return true
+        }
+        return false
+    }
+
+    /** One playback attempt; any media-stack failure just moves to the next candidate. */
+    private fun tryStartPlayback(uriString: String, gradualVolume: Boolean): Boolean {
         return try {
-            val uri = RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                ?: return false
             player = MediaPlayer().apply {
                 setAudioAttributes(attrs)
-                setDataSource(context, uri)
+                setDataSource(context, Uri.parse(uriString))
                 isLooping = true
                 prepare()
                 if (gradualVolume) {
@@ -93,6 +113,7 @@ class KlaxonPlayer(private val context: Context) {
             true
         } catch (t: Exception) {
             // IOException / IllegalStateException / SecurityException from media stack.
+            handler.removeCallbacksAndMessages(null)
             releasePlayer()
             false
         }

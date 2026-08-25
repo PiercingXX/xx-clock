@@ -185,4 +185,30 @@ class ThemeSyncReceiverTest {
     fun `an empty store loads null`() {
         assertNull(ThemeStore(InMemoryThemeKv()).load())
     }
+
+    // ---- remembered custom ground (feeds the in-app switcher's Custom row) ----
+
+    @Test
+    fun `a custom save remembers its ground separately`() {
+        val store = ThemeStore(InMemoryThemeKv())
+        store.save(SyncedTheme(0xFF102030L, isDark = true, presetKey = null))
+        assertEquals(0xFF102030L, store.lastCustomBackground())
+    }
+
+    @Test
+    fun `a later named-preset save keeps the remembered custom ground`() {
+        val store = ThemeStore(InMemoryThemeKv())
+        store.save(SyncedTheme(0xFF102030L, isDark = true, presetKey = null))
+        store.save(SyncedTheme(0xFF131316L, isDark = true, presetKey = "graphite"))
+        // The active slot moved on, but Custom can still be re-picked in-app.
+        assertEquals(0xFF102030L, store.lastCustomBackground())
+        assertEquals(SyncedTheme(0xFF131316L, isDark = true, presetKey = "graphite"), store.load())
+    }
+
+    @Test
+    fun `no custom broadcast ever - no remembered ground`() {
+        val store = ThemeStore(InMemoryThemeKv())
+        store.save(SyncedTheme(0xFF131316L, isDark = true, presetKey = "graphite"))
+        assertNull(store.lastCustomBackground())
+    }
 }

@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- fitsSystemWindows: targetSdk 35 draws edge-to-edge, so without it the
+     heading scrolls up under the status bar (same fix as TxxT's activity roots). -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:fillViewport="true">
 
     <LinearLayout
@@ -352,6 +355,47 @@
                     android:text="@string/setup_btn_allow"
                     android:textSize="13sp" />
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Theme (family preset switcher) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/setup_theme_heading"
+            android:textColor="@color/widget_text"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/setup_theme_subheading"
+            android:textColor="@color/widget_secondary"
+            android:textSize="14sp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_theme"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:cardBackgroundColor="@color/surface_dark"
+            app:cardCornerRadius="16dp">
+
+            <!-- Rows are inflated by SetupActivity from the ThemePreset enum
+                 (item_theme_preset.xml), so the family's eight-preset contract
+                 lives in one place. -->
+            <LinearLayout
+                android:id="@+id/theme_preset_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="12dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="8dp" />
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.button.MaterialButton

@@ -75,7 +75,12 @@ class RingService : android.app.Service() {
 
             val store = ClockStore.get(this)
             player = KlaxonPlayer(this).also {
-                it.start(vibrate = vibrateFor(store, id, isAlarm), gradualVolume = Prefs.GRADUAL_VOLUME_DEFAULT)
+                it.start(
+                    vibrate = vibrateFor(store, id, isAlarm),
+                    gradualVolume = Prefs.GRADUAL_VOLUME_DEFAULT,
+                    // Per-alarm ringtone; null (timers, or no pick) = system default.
+                    soundUri = if (isAlarm) store.getAlarm(id)?.soundUri else null,
+                )
             }
 
             handler.postDelayed(

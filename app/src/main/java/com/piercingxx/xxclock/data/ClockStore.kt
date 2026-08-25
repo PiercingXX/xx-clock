@@ -148,6 +148,8 @@ class ClockStore private constructor(context: Context) {
         label = o.optString("label", ""),
         enabled = o.getBoolean("enabled"),
         vibrate = o.getBoolean("vibrate"),
+        // Absent (pre-sound alarms) or blank both mean "system default sound".
+        soundUri = o.optString("soundUri", "").takeIf { it.isNotBlank() },
     )
 
     private fun alarmToJson(a: Alarm) = JSONObject()
@@ -158,6 +160,9 @@ class ClockStore private constructor(context: Context) {
         .put("label", a.label)
         .put("enabled", a.enabled)
         .put("vibrate", a.vibrate)
+        // putOpt: a null soundUri simply omits the key, keeping the on-disk
+        // shape identical to pre-sound versions until a tone is chosen.
+        .putOpt("soundUri", a.soundUri)
 
     private fun timerFromJson(o: JSONObject) = TimerItem(
         id = o.getLong("id"),
