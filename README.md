@@ -11,7 +11,7 @@ package: com.piercingxx.xxclock        minSdk 29 (Android 10)
 version 1.0                            target/compileSdk 35
 ```
 
-<img src="docs/images/screenshot.png" width="270" alt="XX Clock on a Pixel 6, with the Paper theme set">
+<img src="docs/images/screenshot.png" width="270" alt="XX Clock on a Pixel 6 — AMOLED Night, the family default">
 
 ## Features
 
@@ -68,8 +68,9 @@ are the only two inputs. XX Clock does not read the system dark-mode setting,
 an auto-dark sunrise/sunset schedule, or the time it is displaying. Set Paper
 at noon and it is still Paper at midnight with system dark mode on. Never
 chosen anything, or just wiped app data? AMOLED Night — the family default the
-sibling apps start at. The screenshot above is Paper because Paper was set, not
-because the sun was up.
+sibling apps start at, and what the screenshot above shows. Paper renders the
+same at midnight with system dark mode on as it does at noon; the ground moves
+only when you move it.
 
 Mechanically: a dark theme pins `MODE_NIGHT_YES` and then overpaints the exact
 preset ground; Paper and Mist pin `MODE_NIGHT_NO`, whose resources already
