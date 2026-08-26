@@ -47,8 +47,10 @@ time(ctx, epochMs): String          // locale short time
 until(nowMs, targetMs): String      // "2 d 7 h 53 m"
 
 // constants (Actions.kt): EXTRA_TAB on MainActivity = "clock"|"alarms"|"timers"
-// MainActivity also handles AlarmClock.ACTION_SHOW_ALARMS (Alarms tab) and
-// CATEGORY_APP_CLOCK (clock face) so it is the system/launcher clock app.
+// System clock replacement: MainActivity handles SHOW_ALARMS / SHOW_TIMERS /
+// CATEGORY_APP_CLOCK. AlarmClockApiActivity (NoDisplay) handles SET_ALARM,
+// SET_TIMER, DISMISS_ALARM, DISMISS_TIMER, SNOOZE_ALARM. SET_* require the
+// caller to hold android.permission.SET_ALARM.
 ```
 
 ## File ownership (STRICT — touch ONLY your files)

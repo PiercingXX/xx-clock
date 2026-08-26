@@ -27,8 +27,9 @@ class ClockSystemIntentsTest {
         ).first { it.exists() }.readText()
 
     @Test
-    fun `manifest registers SHOW_ALARMS on MainActivity`() {
+    fun `manifest registers SHOW_ALARMS and SHOW_TIMERS on MainActivity`() {
         assertTrue(mainBlock.contains("android.intent.action.SHOW_ALARMS"))
+        assertTrue(mainBlock.contains("android.intent.action.SHOW_TIMERS"))
         assertTrue(mainBlock.contains("android.intent.category.DEFAULT"))
     }
 
@@ -38,9 +39,22 @@ class ClockSystemIntentsTest {
     }
 
     @Test
+    fun `manifest registers the mutating AlarmClock API on the NoDisplay activity`() {
+        val api = manifestText.substringAfter("AlarmClockApiActivity").substringBefore("activity-alias")
+        assertTrue(api.contains("android.intent.action.DISMISS_ALARM"))
+        assertTrue(api.contains("android.intent.action.DISMISS_TIMER"))
+        assertTrue(api.contains("android.intent.action.SNOOZE_ALARM"))
+        assertTrue(manifestText.contains("android.intent.action.SET_ALARM"))
+        assertTrue(manifestText.contains("android.intent.action.SET_TIMER"))
+        assertTrue(manifestText.contains("android.permission.SET_ALARM"))
+    }
+
+    @Test
     fun `SHOW_ALARMS selects the alarms tab`() {
         val fn = mainSource.substringAfter("fun tabFrom").substringBefore("fun normalizeTab")
         assertTrue(fn.contains("ACTION_SHOW_ALARMS"))
         assertTrue(fn.contains("TAB_ALARMS"))
+        assertTrue(fn.contains("ACTION_SHOW_TIMERS"))
+        assertTrue(fn.contains("TAB_TIMERS"))
     }
 }

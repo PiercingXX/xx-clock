@@ -14,6 +14,29 @@ object TimerRepository {
 
     fun get(context: Context, id: Long): TimerItem? = ClockStore.get(context).getTimer(id)
 
+    /**
+     * Starts [durationMs] labeled [label]. Reuses an idle timer with the same
+     * duration and label when one exists (AlarmClock SET_TIMER identical-reuse).
+     */
+    fun startOrReuse(context: Context, durationMs: Long, label: String = ""): TimerItem {
+        val idle = getAll(context).firstOrNull {
+            it.state == TimerItem.STATE_IDLE &&
+                it.durationMs == durationMs &&
+                it.label == label
+        }
+        if (idle != null) {
+            val running = idle.copy(
+                state = TimerItem.STATE_RUNNING,
+                endsAtEpochMs = System.currentTimeMillis() + durationMs,
+                remainingMs = 0L,
+            )
+            ClockStore.get(context).saveTimer(running)
+            ExactScheduler.scheduleSoonestTimer(context)
+            return running
+        }
+        return start(context, durationMs, label)
+    }
+
     /** Starts a fresh countdown and returns it. */
     fun start(context: Context, durationMs: Long, label: String = ""): TimerItem {
         val timer = TimerItem.newTimer(durationMs, label).copy(

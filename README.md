@@ -18,9 +18,10 @@ version 1.0                            target/compileSdk 35
 
 - **Alarms** — weekly recurrence, labels, vibrate, snooze, volume ramp,
   auto-silence at ten minutes. Scheduled with `setAlarmClock()`, so they fire
-  through Doze and re-register on boot. Handles `SHOW_ALARMS` and
-  `CATEGORY_APP_CLOCK`, so XX-Launcher's clock widget (and the system clock
-  picker) open this app, not Google Clock.
+  through Doze and re-register on boot. Full `AlarmClock` replacement:
+  `SHOW_ALARMS` / `SHOW_TIMERS` / `SET_ALARM` / `SET_TIMER` / dismiss / snooze
+  and `CATEGORY_APP_CLOCK`. XX-Launcher's clock widget and Assistant "set an
+  alarm" land here, not Google Clock.
 - **Per-alarm ringtone** — every alarm carries its own tone. Built-in and
   MediaStore tones always resolve; a storage tone keeps its read grant across
   reboots wherever the provider offers a persistable one. If that tone's URI
@@ -57,7 +58,7 @@ JDK 21 running Gradle 8.11.1, JVM target 17, SDK platform 35. AGP 8.9.1, Kotlin
 ```bash
 export ANDROID_HOME=$HOME/Android/Sdk
 ./gradlew assembleRelease       # -> app/build/outputs/apk/release/
-./gradlew testDebugUnitTest     # 143 JVM unit tests
+./gradlew testDebugUnitTest     # 154 JVM unit tests
 ./gradlew lint                  # 0 errors
 ```
 

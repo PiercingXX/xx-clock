@@ -97,7 +97,17 @@ class MainActivity : AppCompatActivity() {
         internal fun tabFrom(intent: Intent?): String? {
             if (intent == null) return null
             intent.getStringExtra(Actions.EXTRA_TAB)?.let { return normalizeTab(it) }
-            if (intent.action == AlarmClock.ACTION_SHOW_ALARMS) return TAB_ALARMS
+            when (intent.action) {
+                AlarmClock.ACTION_SHOW_ALARMS,
+                AlarmClock.ACTION_SET_ALARM,
+                AlarmClock.ACTION_DISMISS_ALARM,
+                AlarmClock.ACTION_SNOOZE_ALARM,
+                -> return TAB_ALARMS
+                AlarmClock.ACTION_SHOW_TIMERS,
+                AlarmClock.ACTION_SET_TIMER,
+                AlarmClock.ACTION_DISMISS_TIMER,
+                -> return TAB_TIMERS
+            }
             if (intent.action == Intent.ACTION_MAIN &&
                 intent.hasCategory("android.intent.category.APP_CLOCK")
             ) {
