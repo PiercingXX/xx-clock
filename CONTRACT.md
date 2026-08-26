@@ -248,3 +248,39 @@ The family packages were appended to it. **This lives in device settings, not in
 this repo**, so a factory reset, a new phone, or a re-flash brings the symptom
 straight back and it will look like a regression in this code. Check that
 setting before changing anything in `theme/`.
+
+## Ringtone fallback — never ring silent
+
+Each alarm carries its own tone, chosen through the system alarm picker
+(built-in tones plus anything in `/sdcard/Ringtones`). At ring time
+`audio/RingCandidates.kt` builds the candidate list in a fixed order — chosen
+tone → system alarm default → notification default — dropping blanks and
+duplicates as it goes. A tone whose file was deleted or whose provider vanished
+falls through to the next candidate, so no alarm can ring silent because of a
+stale pick.
+
+`RingCandidates.kt` has no `android.*` imports on purpose: the ordering rule is
+a pure function and is asserted on the JVM rather than hoped at on a device.
+Keep it that way — any new candidate source goes into the list, not into
+`KlaxonPlayer`.
+
+## Release signing
+
+No keystore is committed to this repo. Release builds are signed only if
+credentials are supplied by one of two routes:
+
+- a gitignored `keystore.properties` at the repo root, with `storeFile`,
+  `storePassword`, `keyAlias`, `keyPassword`; or
+- the environment variables `XXCLOCK_STORE_FILE`, `XXCLOCK_STORE_PASSWORD`,
+  `XXCLOCK_KEY_ALIAS`, `XXCLOCK_KEY_PASSWORD`.
+
+With neither, `assembleRelease` produces an **unsigned** APK. Sign it yourself
+with `apksigner`, or sideload the debug build for testing. Do not add a keystore
+or its passwords to the repo to make this more convenient.
+
+## Known limitations (v1)
+
+- One-shot alarms whose fire window passes while the device is powered off are
+  silently rescheduled to tomorrow. Recurring alarms always keep their correct
+  next occurrence.
+- Day summaries are English-only.
