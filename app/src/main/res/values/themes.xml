@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- PiercingXX: monochrome + one accent. Strong emphasis inverts
          (Signal block, Ink text — see colorOnPrimary / secondaryContainer).
 
@@ -8,7 +8,7 @@
          isDark (MODE_NIGHT_YES/NO, pinned before the first activity inflates
          and never left on FOLLOW_SYSTEM). This day copy is what a Paper/Mist
          pick selects; values-night/themes.xml is what a dark pick selects. -->
-    <style name="Theme.XxClock" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.XxClock" parent="Theme.Material3.DayNight.NoActionBar" tools:targetApi="31">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/on_primary</item>
         <item name="colorPrimaryContainer">@color/primary</item>
@@ -35,6 +35,28 @@
              A Paper pick must stay Paper at midnight, so opt out. (API 29 =
              minSdk, so no -v29 variant is needed.) -->
         <item name="android:forceDarkAllowed">false</item>
+
+        <!-- The Android 12+ starting window: the frame the platform draws
+             before the first activity exists. There is no way to decline it,
+             only to empty it. Its defaults stamp the launcher icon over a
+             ground the platform derives from the theme — a mark this app never
+             chose to show, and a different one in every family app.
+
+             This is the one surface the pure theme rule cannot reach.
+             ThemeSyncApplier needs a stored preference and a live window; this
+             window predates both, so the ground here is a static resource and
+             stays family ink under every pick. Under Paper or Mist that is a
+             dark frame ahead of a light clock — unavoidable, since a starting
+             window has no way to read a runtime choice, and ink is the family
+             default, so it is the right constant to be wrong with.
+
+             Repeated verbatim in values-night/themes.xml: styles do not merge
+             across configs, so a dark pick — which selects that copy — would
+             otherwise inherit none of this and get the launcher icon back. -->
+        <item name="android:windowSplashScreenBackground">@color/pxx_ink</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBrandingImage">@null</item>
     </style>
 
     <!-- Full-screen alarm alert. Deliberately NOT DayNight: the layout hardcodes
@@ -43,7 +65,7 @@
          DayNight theme a light pick — or, before the theme became a pure
          choice, plain daytime — gave this screen ink-on-ink buttons. Constant
          by design, with no time-of-day input of its own. -->
-    <style name="Theme.XxClock.AlarmAlert" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.XxClock.AlarmAlert" parent="Theme.Material3.Dark.NoActionBar" tools:targetApi="31">
         <item name="colorPrimary">@color/pxx_signal</item>
         <item name="colorOnPrimary">@color/pxx_ink</item>
         <item name="colorPrimaryContainer">@color/pxx_signal</item>
@@ -66,5 +88,16 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:forceDarkAllowed">false</item>
+
+        <!-- The alarm screen is the one that cold-starts at 3 a.m., from a
+             process the system just woke — so it is the one most likely to show
+             a starting window at all. The dotted name does not inherit here:
+             the explicit parent is Material3.Dark, so the base theme's
+             suppression (see Theme.XxClock) does not reach this style and has
+             to be repeated. Constant ink, like everything else on this screen. -->
+        <item name="android:windowSplashScreenBackground">@color/pxx_ink</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBrandingImage">@null</item>
     </style>
 </resources>

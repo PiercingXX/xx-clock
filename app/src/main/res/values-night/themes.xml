@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Night copy of Theme.XxClock (styles don't merge across configs).
          Color roles flip via values-night/colors.xml; ramp surfaces added here.
 
          Selected when the CHOSEN theme is dark, never because the OS is: the
          app pins MODE_NIGHT_YES/NO from the stored theme and is never left on
          FOLLOW_SYSTEM. See theme/ThemeSyncApplier.kt. -->
-    <style name="Theme.XxClock" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.XxClock" parent="Theme.Material3.DayNight.NoActionBar" tools:targetApi="31">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/on_primary</item>
         <item name="colorPrimaryContainer">@color/primary</item>
@@ -30,5 +30,16 @@
         <item name="android:windowLightStatusBar">false</item>
         <!-- Matches the day copy: no platform recoloring, in either direction. -->
         <item name="android:forceDarkAllowed">false</item>
+
+        <!-- Matches the day copy for the same reason a style has to be copied
+             at all here: the platform picks ONE definition of Theme.XxClock per
+             config, so anything the day copy declares is simply absent under a
+             dark pick. Omitting these would hand the launcher icon back to
+             every user who chose a dark theme — i.e. almost everyone. See
+             values/themes.xml for what the four attributes do. -->
+        <item name="android:windowSplashScreenBackground">@color/pxx_ink</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBrandingImage">@null</item>
     </style>
 </resources>
