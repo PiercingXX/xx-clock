@@ -1,5 +1,7 @@
 package com.piercingxx.xxclock.model
 
+import com.piercingxx.xxclock.data.ClockStore
+
 /**
  * A countdown timer persisted as a wall-clock deadline so it survives process death.
  *
@@ -24,7 +26,7 @@ data class TimerItem(
         const val STATE_FINISHED = "FINISHED"
 
         fun newTimer(durationMs: Long, label: String = ""): TimerItem = TimerItem(
-            id = System.currentTimeMillis(),
+            id = ClockStore.nextId(),
             durationMs = durationMs,
             state = STATE_IDLE,
             endsAtEpochMs = 0L,

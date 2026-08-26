@@ -143,6 +143,13 @@ the `Theme.XxClock.AlarmAlert` style and `android:forceDarkAllowed=false`,
 `values-night/themes.xml` gained the same opt-out, and the manifest's
 `AlarmAlertActivity` entry gained `android:theme`. Still no new dependencies.
 
+Sender policy: deliberately unauthenticated — the receiver is exported with no
+permission and no sender check, so any app on the device may send the action
+and restyle the clock. Accepted because the payload only moves the look and
+nothing leaves the device, and a manifest receiver has no reliable sender
+identity below API 34 (minSdk is 29) short of a signature permission held by
+xx-launcher.
+
 Tests (JUnit4, pure JVM, seams instead of Robolectric):
 - `theme/ThemePresetTest`: all 7 display names + case-insensitive + unknown/null;
   stable keys; ground values; dark/light classification vs the contrast rule;
@@ -264,6 +271,66 @@ a pure function and is asserted on the JVM rather than hoped at on a device.
 Keep it that way — any new candidate source goes into the list, not into
 `KlaxonPlayer`.
 
+## Direct boot — alarms ring through an overnight reboot
+
+Alarm state does not wait for first unlock. `ClockStore` keeps all of its data
+(alarms, timers, per-alarm scheduled/snoozed/ringing runtime) in **device
+protected storage** (`createDeviceProtectedStorageContext()` → prefs file
+`xx_clock`, separate namespace from credential-encrypted prefs). UI-only prefs
+(theme `xx_clock_theme`, clock style `xx_clock_ui`) stay credential-encrypted;
+they are never needed to ring.
+
+Three components are `directBootAware="true"` (per-component, deliberately not
+application-wide): `AlarmEventReceiver`, `RingService`,
+`AlarmAlertActivity`. The receiver routes every action through a
+device-protected-storage context, so `ExactScheduler`'s bookkeeping
+(`xx_clock_sched`) is also reachable while locked. `Application.onCreate`
+skips reconcile before unlock (`UserManager.isUserUnlocked`) — pre-unlock the
+process exists only for those components and `LOCKED_BOOT_COMPLETED` owns
+reconciliation.
+
+Reboot sequence: `LOCKED_BOOT_COMPLETED` → receiver →
+`AlarmCoordinator.reconcile(force = true)` re-registers every enabled alarm at
+its next occurrence and every still-pending snooze via `setAlarmClock()` (which
+fires in Doze). A 6:00 alarm set before an overnight reboot rings on the lock
+screen; the full-screen alert works there too (`showWhenLocked` +
+`turnScreenOn`). When the user then unlocks, `ACTION_USER_UNLOCKED` runs the
+same reconcile with `recoverRinging = false` so a live lock-screen ringer is
+not classified as missed; that is also the CE→DE migration trigger if this
+process started locked (`Application.onCreate` does not run again at unlock).
+`BOOT_COMPLETED` still runs after first unlock on a fresh process (covers
+post-update boots that never went through locked boot).
+
+**Migration:** installs predating this scheme kept alarm data in
+credential-encrypted prefs. On the first store access after unlock,
+`ClockStore.get()` copies `alarms` / `timers` / `runtime` into device-protected
+storage — once, idempotently, and only when DE has no alarms yet (DE always
+wins). Receiver paths always arrive in the device-protected scope; CE is
+read from the Application object stashed in `ClockApp.onCreate` (the SDK
+hides `createCredentialProtectedStorageContext()`), and the copy is written
+through the existing store singleton so a store created at locked boot sees
+the new rows without a second SharedPreferences cache. If the user updates
+and reboots without unlocking, DE is empty until `USER_UNLOCKED` (or a fresh
+unlocked process); after that copy, later reboots ring pre-unlock.
+
+**Pre-unlock degradations (graceful by design):**
+
+- Custom ringtone URIs under `/sdcard` live on credential-encrypted FUSE and
+  cannot be read before unlock: `MediaPlayer.setDataSource` fails with
+  SecurityException/IOException and `KlaxonPlayer` falls through
+  `ringCandidates` to the system default alarm tone (then notification
+  default). Built-in device tones play normally; after unlock the chosen tone
+  works again on the next occurrence.
+- Widget refreshes are broadcast to a non-direct-boot-aware provider; they are
+  deferred/dropped until unlock (the widget's next-alarm line catches up then).
+- Theme reads (`xx_clock_theme`) are credential-encrypted. `ThemeSyncApplier`
+  does not open them before first unlock (opening CE SharedPreferences throws
+  and would crash `Application.onCreate` on `LOCKED_BOOT_COMPLETED`). Locked
+  resolves to the family default (AMOLED Night). In practice only the alarm
+  alert can be shown pre-unlock, and it pins its own always-dark theme anyway.
+- Notification channels, posting the missed/ringing notifications, exact-alarm
+  scheduling and vibration all work pre-unlock unchanged.
+
 ## Release signing
 
 No keystore is committed to this repo. Release builds are signed only if
@@ -284,3 +351,6 @@ or its passwords to the repo to make this more convenient.
   silently rescheduled to tomorrow. Recurring alarms always keep their correct
   next occurrence.
 - Day summaries are English-only.
+- A custom ringtone stored on shared storage falls back to the system default
+  alarm tone when the alarm fires before first unlock (direct boot); see
+  **Direct boot** above.

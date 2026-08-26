@@ -1,5 +1,6 @@
 package com.piercingxx.xxclock.model
 
+import com.piercingxx.xxclock.data.ClockStore
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Calendar
@@ -41,7 +42,7 @@ data class Alarm(
         val ALL_DAYS_MASK: Int = WEEKDAYS_MASK or WEEKENDS_MASK
 
         fun newAlarm(hour: Int, minute: Int): Alarm = Alarm(
-            id = System.currentTimeMillis(),
+            id = ClockStore.nextId(),
             hour = hour,
             minute = minute,
             daysMask = 0,

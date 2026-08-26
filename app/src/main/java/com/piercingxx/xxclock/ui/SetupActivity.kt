@@ -10,7 +10,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.piercingxx.xxclock.R
+import com.piercingxx.xxclock.alarm.AlarmCoordinator
 import com.piercingxx.xxclock.permissions.PermissionsGate
+import com.piercingxx.xxclock.scheduler.ExactScheduler
 import com.piercingxx.xxclock.theme.CUSTOM_PRESET_KEY
 import com.piercingxx.xxclock.theme.SharedPreferencesThemeKeyValueStore
 import com.piercingxx.xxclock.theme.ThemePreset
@@ -74,6 +76,9 @@ class SetupActivity : AppCompatActivity() {
         ),
     )
 
+    /** Exact-alarm grant state as of the previous [onResume]; null before first check. */
+    private var lastKnownExactGranted: Boolean? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_setup)
@@ -88,6 +93,14 @@ class SetupActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Returning from the exact-alarm settings screen with a fresh grant:
+        // rebuild scheduling so revoked-while-away alarms return to exact slots
+        // (the manifest broadcast covers changes made while the process lives).
+        val exactGranted = PermissionsGate.exactAlarmsGranted(this)
+        if (lastKnownExactGranted == false && exactGranted) {
+            AlarmCoordinator.reconcile(this, force = true, recoverRinging = false)
+        }
+        lastKnownExactGranted = exactGranted
         refreshStates()
         refreshThemeRows()
     }
@@ -100,6 +113,14 @@ class SetupActivity : AppCompatActivity() {
             )
             findViewById<View>(row.buttonId).isEnabled = !granted
         }
+        // Show the hole: exact access is off while armed alarms are registered,
+        // so those alarms live on inexact windows until access is restored.
+        findViewById<View>(R.id.status_exact).visibility =
+            if (!PermissionsGate.exactAlarmsGranted(this) && ExactScheduler.hasDegradedAlarm(this)) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
     }
 
     // ------------------------------------------------------------------ theme

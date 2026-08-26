@@ -19,9 +19,11 @@ version 1.0                            target/compileSdk 35
 - **Alarms** — weekly recurrence, labels, vibrate, snooze, volume ramp,
   auto-silence at ten minutes. Scheduled with `setAlarmClock()`, so they fire
   through Doze and re-register on boot.
-- **Per-alarm ringtone** — every alarm carries its own tone. If that tone's file
-  is gone, the player falls through to the next candidate instead of ringing
-  silent. An alarm that makes no noise is not an alarm.
+- **Per-alarm ringtone** — every alarm carries its own tone. Built-in and
+  MediaStore tones always resolve; a storage tone keeps its read grant across
+  reboots wherever the provider offers a persistable one. If that tone's URI
+  is gone or unreadable, the player falls through to the next candidate
+  instead of ringing silent. An alarm that makes no noise is not an alarm.
 - **Timers** — presets and custom, several at once, wall-clock deadlines that
   survive process death.
 - **Widget** — clock, date, next alarm. `TextClock` in RemoteViews, so there is
@@ -53,7 +55,7 @@ JDK 21 running Gradle 8.11.1, JVM target 17, SDK platform 35. AGP 8.9.1, Kotlin
 ```bash
 export ANDROID_HOME=$HOME/Android/Sdk
 ./gradlew assembleRelease       # -> app/build/outputs/apk/release/
-./gradlew testDebugUnitTest     # 95 JVM unit tests
+./gradlew testDebugUnitTest     # 140 JVM unit tests
 ./gradlew lint                  # 0 errors
 ```
 

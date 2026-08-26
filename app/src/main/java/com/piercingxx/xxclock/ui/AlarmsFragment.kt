@@ -21,7 +21,10 @@ class AlarmsFragment : Fragment(R.layout.fragment_alarms), AlarmEditDialogFragme
         val ctx = requireContext()
         adapter = AlarmsAdapter(
             onRowClick = ::openEditor,
-            onToggle = { id, enabled -> AlarmRepository.toggle(ctx, id, enabled) },
+            onToggle = { id, enabled ->
+                AlarmRepository.toggle(ctx, id, enabled)
+                reload()
+            },
             onRowLongClick = ::deleteWithUndo,
         )
         view.findViewById<RecyclerView>(R.id.alarms_list).apply {
@@ -29,7 +32,7 @@ class AlarmsFragment : Fragment(R.layout.fragment_alarms), AlarmEditDialogFragme
             adapter = this@AlarmsFragment.adapter
         }
         view.findViewById<FloatingActionButton>(R.id.fab_add_alarm)
-            .setOnClickListener { openEditor(newDraftAlarm()) }
+            .setOnClickListener { openEditor(newDraftAlarm(), isNew = true) }
     }
 
     override fun onResume() {
@@ -52,8 +55,8 @@ class AlarmsFragment : Fragment(R.layout.fragment_alarms), AlarmEditDialogFragme
         return Alarm.newAlarm(hour % 24, if (minute < 30) 30 else 0)
     }
 
-    private fun openEditor(alarm: Alarm) {
-        AlarmEditDialogFragment.newInstance(alarm)
+    private fun openEditor(alarm: Alarm, isNew: Boolean = false) {
+        AlarmEditDialogFragment.newInstance(alarm, isNew)
             .show(childFragmentManager, AlarmEditDialogFragment.TAG)
     }
 

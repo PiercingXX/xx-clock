@@ -62,15 +62,34 @@ object AlarmRepository {
 
     fun isRinging(context: Context, id: Long): Boolean = ClockStore.get(context).isRinging(id)
 
-    /** Soonest upcoming ring across enabled alarms (snooze time counts as the next ring). */
+    /** Soonest upcoming ring across armed alarms — enabled, or still snoozed. */
     fun nextArmed(context: Context): Pair<Alarm, Long>? {
         val store = ClockStore.get(context)
-        return store.alarms()
-            .filter { it.enabled }
-            .map { it to maxOf(store.snoozedUntil(it.id), store.scheduledFire(it.id)) }
-            .filter { it.second > System.currentTimeMillis() }
-            .minByOrNull { it.second }
+        return nextArmed(
+            alarms = store.alarms(),
+            snoozedUntil = store::snoozedUntil,
+            scheduledFire = store::scheduledFire,
+            nowMs = System.currentTimeMillis(),
+        )
     }
+
+    /**
+     * Pure core of [nextArmed]. An alarm is armed while enabled OR a snooze is
+     * still pending: a one-shot that disabled itself at fire time must keep
+     * counting once the user snoozes it.
+     */
+    internal fun nextArmed(
+        alarms: List<Alarm>,
+        snoozedUntil: (Long) -> Long,
+        scheduledFire: (Long) -> Long,
+        nowMs: Long,
+    ): Pair<Alarm, Long>? =
+        alarms.asSequence()
+            .map { Triple(it, snoozedUntil(it.id), scheduledFire(it.id)) }
+            .filter { (alarm, snoozed, _) -> alarm.enabled || snoozed > nowMs }
+            .map { (alarm, snoozed, fire) -> alarm to maxOf(snoozed, fire) }
+            .filter { (_, at) -> at > nowMs }
+            .minByOrNull { (_, at) -> at }
 
     /** Snoozes the ringing alarm with the default duration (used by in-app controls). */
     fun snoozeRinging(context: Context, id: Long, minutes: Int) {

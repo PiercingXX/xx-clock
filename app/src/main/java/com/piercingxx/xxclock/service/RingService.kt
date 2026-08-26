@@ -19,6 +19,7 @@ import com.piercingxx.xxclock.audio.KlaxonPlayer
 import com.piercingxx.xxclock.data.ClockStore
 import com.piercingxx.xxclock.model.TimerItem
 import com.piercingxx.xxclock.notify.Channels
+import com.piercingxx.xxclock.scheduler.ExactScheduler
 import com.piercingxx.xxclock.ui.AlarmAlertActivity
 import com.piercingxx.xxclock.time.TimerMath
 import com.piercingxx.xxclock.util.Fmt
@@ -46,17 +47,22 @@ class RingService : android.app.Service() {
             return START_NOT_STICKY
         }
         val isAlarm = action == Actions.FIRE_ALARM
-        begin(id, isAlarm)
-        return START_NOT_STICKY
+        return if (begin(id, isAlarm)) START_REDELIVER_INTENT else START_NOT_STICKY
     }
 
-    private fun begin(id: Long, isAlarm: Boolean) {
-        // Re-entry while already ringing (newest-wins): stop the previous player and
-        // its pending auto-silence callback so neither outlives this new ring.
+    /**
+     * Re-entrant (newest-wins): stops the previous player and its pending
+     * auto-silence callback first, so a redelivered start intent after a
+     * mid-ring process kill takes over cleanly instead of stacking rings.
+     *
+     * @return true when the ring session was armed (foreground entered, ringer
+     *   started); false means the missed-notification path already ran.
+     */
+    private fun begin(id: Long, isAlarm: Boolean): Boolean {
         handler.removeCallbacksAndMessages(null)
         player?.stop()
         player = null
-        try {
+        return try {
             Channels.ensure(this, if (isAlarm) Channels.ID_ALARM else Channels.ID_TIMER)
             val notification = buildNotification(id, isAlarm)
             if (Build.VERSION.SDK_INT >= 34) {
@@ -87,11 +93,13 @@ class RingService : android.app.Service() {
                 { AlarmCoordinator.autoSilence(this, id, isAlarm = isAlarm) },
                 Prefs.AUTO_SILENCE_MINUTES * 60_000L,
             )
+            true
         } catch (t: Exception) {
             // FGS-start rejection (ForegroundServiceStartNotAllowedException etc.) or any
             // setup failure: degrade to a missed/finished notification instead of crashing.
             AlarmCoordinator.ringStartFailed(this, id, isAlarm)
             stopSelf()
+            false
         }
     }
 
@@ -133,7 +141,7 @@ class RingService : android.app.Service() {
 
         val alertIntent = PendingIntent.getActivity(
             this,
-            id.toInt(),
+            ExactScheduler.requestCode(ExactScheduler.REQ_KIND_SHOW, id),
             Intent(this, AlarmAlertActivity::class.java)
                 .setAction(Actions.FIRE_ALARM.takeIf { isAlarm } ?: Actions.FIRE_TIMER)
                 .putExtra(Actions.EXTRA_ID, id)
@@ -181,13 +189,20 @@ class RingService : android.app.Service() {
     private fun receiverActionPendingIntent(action: String, id: Long, snoozeMinutes: Int): PendingIntent =
         PendingIntent.getBroadcast(
             this,
-            (id.toInt() xor action.hashCode()),
+            ExactScheduler.requestCode(actionKind(action), id),
             Intent(this, com.piercingxx.xxclock.receiver.AlarmEventReceiver::class.java)
                 .setAction(action)
                 .putExtra(Actions.EXTRA_ID, id)
                 .putExtra(Actions.EXTRA_SNOOZE_MINUTES, snoozeMinutes),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+
+    private fun actionKind(action: String): Int =
+        if (action == Actions.SNOOZE_ALARM || action == Actions.DISMISS_ALARM) {
+            ExactScheduler.REQ_KIND_ALARM
+        } else {
+            ExactScheduler.REQ_KIND_TIMER
+        }
 
     companion object {
         private const val NOTIFICATION_ID = 42

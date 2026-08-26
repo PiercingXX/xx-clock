@@ -2,11 +2,13 @@ package com.piercingxx.xxclock.alarm
 
 import android.content.Context
 import android.app.NotificationManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.piercingxx.xxclock.Actions
 import com.piercingxx.xxclock.Prefs
 import com.piercingxx.xxclock.R
 import com.piercingxx.xxclock.data.ClockStore
+import com.piercingxx.xxclock.data.ClockStoreBackend
 import com.piercingxx.xxclock.model.Alarm
 import com.piercingxx.xxclock.model.TimerItem
 import com.piercingxx.xxclock.notify.Channels
@@ -30,6 +32,22 @@ import com.piercingxx.xxclock.widget.DigitalWidgetProvider
  */
 object AlarmCoordinator {
 
+    private const val LOG_TAG = "xxclock"
+
+    // ---------------------------------------------------- collaborator seams
+
+    // Injectable collaborators for the fire/snooze/reset lifecycles so JVM tests
+    // can drive them with an in-memory store and recorder scheduler (family
+    // rule: seams, not Android mocks). Defaults are the production wiring.
+    internal var storeOf: (Context) -> ClockStoreBackend = { ClockStore.get(it) }
+    internal var clock: () -> Long = System::currentTimeMillis
+    internal var ringStart: (Context, String, Long) -> Boolean = { c, action, id -> RingService.start(c, action, id) }
+    internal var ringStop: (Context) -> Unit = { c -> RingService.stop(c) }
+    internal var scheduleAlarm: (Context, Alarm, Long) -> Unit = { c, alarm, at -> ExactScheduler.scheduleAlarmAt(c, alarm, at) }
+    internal var cancelAlarm: (Context, Long) -> Unit = { c, id -> ExactScheduler.cancelAlarm(c, id) }
+    internal var scheduleTimers: (Context) -> Unit = { c -> ExactScheduler.scheduleSoonestTimer(c) }
+    internal var refreshWidgets: (Context) -> Unit = { c -> DigitalWidgetProvider.refreshAll(c) }
+
     fun handleAction(context: Context, action: String?, id: Long, snoozeMinutes: Int) {
         when (action) {
             Actions.FIRE_ALARM -> fireAlarm(context, id)
@@ -42,6 +60,11 @@ object AlarmCoordinator {
             android.content.Intent.ACTION_LOCKED_BOOT_COMPLETED,
             "android.intent.action.MY_PACKAGE_REPLACED",
             -> reconcile(context, force = true, recoverRinging = true)
+            // Process may have started locked (LOCKED_BOOT_COMPLETED). Application.onCreate
+            // will not run again at unlock, so this is the CE→DE migration + re-arm.
+            // recoverRinging stays false: a live lock-screen ringer is not a missed alarm.
+            android.content.Intent.ACTION_USER_UNLOCKED,
+            -> reconcile(context, force = true, recoverRinging = false)
             android.content.Intent.ACTION_TIME_CHANGED,
             android.content.Intent.ACTION_TIMEZONE_CHANGED,
             -> reconcile(context, force = false, recoverRinging = false)
@@ -51,28 +74,30 @@ object AlarmCoordinator {
     // ------------------------------------------------------------ alarms
 
     fun fireAlarm(context: Context, id: Long) {
-        val store = ClockStore.get(context)
+        val store = storeOf(context)
         val alarm = store.getAlarm(id) ?: return
 
         silenceOtherRinger(context, store, exceptId = id)
 
         if (alarm.repeating) {
-            val next = NextOccurrence.alarmMillis(alarm.hour, alarm.minute, alarm.daysMask)
-            ExactScheduler.scheduleAlarmAt(context, alarm, next)
+            // Strictly-after bound: firing at the exact wall instant of the slot
+            // must re-arm the NEXT occurrence, not "now" again.
+            val next = NextOccurrence.alarmMillis(alarm.hour, alarm.minute, alarm.daysMask, clock() + 1)
+            scheduleAlarm(context, alarm, next)
         } else {
             store.saveAlarm(alarm.copy(enabled = false))
         }
 
         store.setSnoozedUntil(id, 0L)
         store.setRinging(id, true)
-        if (!RingService.start(context, Actions.FIRE_ALARM, id)) {
+        if (!ringStart(context, Actions.FIRE_ALARM, id)) {
             ringStartFailed(context, id, isAlarm = true)
         }
-        DigitalWidgetProvider.refreshAll(context)
+        refreshWidgets(context)
     }
 
     /** Newest-wins: silence any other ringer (alarm or timer) without a missed notification. */
-    private fun silenceOtherRinger(context: Context, store: ClockStore, exceptId: Long) {
+    private fun silenceOtherRinger(context: Context, store: ClockStoreBackend, exceptId: Long) {
         store.ringingId()?.let { current ->
             if (current != exceptId) {
                 autoSilence(context, current, isAlarm = store.getAlarm(current) != null, postNotification = false)
@@ -81,26 +106,26 @@ object AlarmCoordinator {
     }
 
     fun snooze(context: Context, id: Long, minutes: Int) {
-        val store = ClockStore.get(context)
-        val alarm = store.getAlarm(id) ?: run { RingService.stop(context); return }
-        RingService.stop(context)
-        val until = System.currentTimeMillis() + minutes * 60_000L
+        val store = storeOf(context)
+        val alarm = store.getAlarm(id) ?: run { ringStop(context); return }
+        ringStop(context)
+        val until = clock() + minutes * 60_000L
         store.setRinging(id, false)
         store.setSnoozedUntil(id, until)
-        ExactScheduler.scheduleAlarmAt(context, alarm, until)
-        DigitalWidgetProvider.refreshAll(context)
+        scheduleAlarm(context, alarm, until)
+        refreshWidgets(context)
     }
 
     fun dismiss(context: Context, id: Long) {
-        RingService.stop(context)
-        ClockStore.get(context).setRinging(id, false)
-        DigitalWidgetProvider.refreshAll(context)
+        ringStop(context)
+        storeOf(context).setRinging(id, false)
+        refreshWidgets(context)
     }
 
     /** Auto-silence timeout reached while ringing. */
     fun autoSilence(context: Context, id: Long, isAlarm: Boolean, postNotification: Boolean = true) {
-        RingService.stop(context)
-        val store = ClockStore.get(context)
+        ringStop(context)
+        val store = storeOf(context)
         store.setRinging(id, false)
         if (isAlarm) {
             store.clearRuntime(id)
@@ -108,7 +133,7 @@ object AlarmCoordinator {
         } else {
             stopTimerInternal(context, id)
         }
-        DigitalWidgetProvider.refreshAll(context)
+        refreshWidgets(context)
     }
 
     /**
@@ -117,7 +142,7 @@ object AlarmCoordinator {
      * so the user still learns the alarm/timer fired.
      */
     fun ringStartFailed(context: Context, id: Long, isAlarm: Boolean) {
-        val store = ClockStore.get(context)
+        val store = storeOf(context)
         store.setRinging(id, false)
         if (isAlarm) {
             store.clearRuntime(id)
@@ -126,34 +151,39 @@ object AlarmCoordinator {
             stopTimerInternal(context, id)
             postMissed(context, id, title = context.getString(R.string.notif_timer_finished))
         }
-        DigitalWidgetProvider.refreshAll(context)
+        refreshWidgets(context)
     }
 
     // ------------------------------------------------------------ timers
 
     fun fireTimer(context: Context, id: Long, tryRing: Boolean = true) {
-        val store = ClockStore.get(context)
+        val store = storeOf(context)
         val timer = store.getTimer(id) ?: return
 
         silenceOtherRinger(context, store, exceptId = id)
 
         store.saveTimer(timer.copy(state = TimerItem.STATE_FINISHED, remainingMs = 0L, endsAtEpochMs = 0L))
         store.setRinging(id, true)
-        val started = tryRing && RingService.start(context, Actions.FIRE_TIMER, id)
+        val started = tryRing && ringStart(context, Actions.FIRE_TIMER, id)
         if (!started) {
             store.setRinging(id, false)
             postMissed(context, id, title = context.getString(R.string.notif_timer_finished))
         }
-        ExactScheduler.scheduleSoonestTimer(context)
+        scheduleTimers(context)
     }
 
     fun stopTimer(context: Context, id: Long) {
-        RingService.stop(context)
+        // Only the ringer itself may tear down the global ring service: stopping
+        // or resetting an idle/paused/running timer must never kill another
+        // alarm's/timer's ring (mirrors TimerRepository.delete's RingingGuard).
+        if (storeOf(context).isRinging(id)) {
+            ringStop(context)
+        }
         stopTimerInternal(context, id)
     }
 
     private fun stopTimerInternal(context: Context, id: Long) {
-        val store = ClockStore.get(context)
+        val store = storeOf(context)
         store.setRinging(id, false)
         val timer = store.getTimer(id) ?: return
         store.saveTimer(
@@ -163,23 +193,23 @@ object AlarmCoordinator {
                 endsAtEpochMs = 0L,
             ),
         )
-        ExactScheduler.scheduleSoonestTimer(context)
+        scheduleTimers(context)
     }
 
     /** "+1 min" while a timer is ringing: restart it with one minute on the clock. */
     fun addMinuteToRingingTimer(context: Context, id: Long) {
-        RingService.stop(context)
-        val store = ClockStore.get(context)
+        ringStop(context)
+        val store = storeOf(context)
         store.setRinging(id, false)
         val timer = store.getTimer(id) ?: return
         store.saveTimer(
             timer.copy(
                 state = TimerItem.STATE_RUNNING,
-                endsAtEpochMs = System.currentTimeMillis() + 60_000L,
+                endsAtEpochMs = clock() + 60_000L,
                 remainingMs = 0L,
             ),
         )
-        ExactScheduler.scheduleSoonestTimer(context)
+        scheduleTimers(context)
     }
 
     // ------------------------------------------------------------ reconciliation
@@ -198,47 +228,58 @@ object AlarmCoordinator {
      * live ringer as missed.
      */
     fun reconcile(context: Context, force: Boolean = false, recoverRinging: Boolean = true) {
-        val store = ClockStore.get(context)
-        val now = System.currentTimeMillis()
+        val store = storeOf(context)
+        val now = clock()
 
         for (alarm in store.alarms()) {
-            when {
-                store.isRinging(alarm.id) && recoverRinging -> {
-                    // Process died mid-ring: mark missed; next occurrence was already scheduled.
-                    store.setRinging(alarm.id, false)
-                    store.clearRuntime(alarm.id)
-                    if (alarm.repeating) {
-                        val next = NextOccurrence.alarmMillis(alarm.hour, alarm.minute, alarm.daysMask)
-                        ExactScheduler.scheduleAlarmAt(context, alarm, next)
-                    }
-                    postMissed(context, alarm.id, title = context.getString(R.string.notif_alarm_missed))
-                }
-                !alarm.enabled -> {
-                    // A disabled alarm may still owe a snoozed ring (one-shots disable at fire time).
-                    val snoozedUntil = store.snoozedUntil(alarm.id)
-                    if (snoozedUntil > now) {
-                        if (force || store.scheduledFire(alarm.id) != snoozedUntil) {
-                            ExactScheduler.scheduleAlarmAt(context, alarm, snoozedUntil)
+            // Per-alarm isolation: one semantically-garbage row (hour=25, empty
+            // days mask) must not abort the remaining registrations of the pass.
+            runCatching {
+                when {
+                    store.isRinging(alarm.id) && recoverRinging -> {
+                        // Process died mid-ring: mark missed; next occurrence was already scheduled.
+                        store.setRinging(alarm.id, false)
+                        store.clearRuntime(alarm.id)
+                        if (alarm.repeating) {
+                            val next = NextOccurrence.alarmMillis(alarm.hour, alarm.minute, alarm.daysMask)
+                            scheduleAlarm(context, alarm, next)
                         }
-                    } else {
-                        if (snoozedUntil in 1..now) {
-                            store.setSnoozedUntil(alarm.id, 0L)
-                            postMissed(context, alarm.id, title = context.getString(R.string.notif_alarm_missed))
+                        postMissed(context, alarm.id, title = context.getString(R.string.notif_alarm_missed))
+                    }
+                    store.isRinging(alarm.id) -> {
+                        // Live ringer in this process (USER_UNLOCKED / TIME_SET /
+                        // exact-alarm grant). Recurring already booked its next
+                        // occurrence at fire; do not setAlarmClock(now) and re-fire.
+                    }
+                    !alarm.enabled -> {
+                        // A disabled alarm may still owe a snoozed ring (one-shots disable at fire time).
+                        val snoozedUntil = store.snoozedUntil(alarm.id)
+                        if (snoozedUntil > now) {
+                            if (force || store.scheduledFire(alarm.id) != snoozedUntil) {
+                                scheduleAlarm(context, alarm, snoozedUntil)
+                            }
+                        } else {
+                            if (snoozedUntil in 1..now) {
+                                store.setSnoozedUntil(alarm.id, 0L)
+                                postMissed(context, alarm.id, title = context.getString(R.string.notif_alarm_missed))
+                            }
+                            cancelAlarm(context, alarm.id)
                         }
-                        ExactScheduler.cancelAlarm(context, alarm.id)
+                    }
+                    else -> {
+                        val snoozedUntil = store.snoozedUntil(alarm.id)
+                        val expected = if (snoozedUntil > now) {
+                            snoozedUntil
+                        } else {
+                            NextOccurrence.alarmMillis(alarm.hour, alarm.minute, alarm.daysMask, now)
+                        }
+                        if (force || store.scheduledFire(alarm.id) != expected) {
+                            scheduleAlarm(context, alarm, expected)
+                        }
                     }
                 }
-                else -> {
-                    val snoozedUntil = store.snoozedUntil(alarm.id)
-                    val expected = if (snoozedUntil > now) {
-                        snoozedUntil
-                    } else {
-                        NextOccurrence.alarmMillis(alarm.hour, alarm.minute, alarm.daysMask, now)
-                    }
-                    if (force || store.scheduledFire(alarm.id) != expected) {
-                        ExactScheduler.scheduleAlarmAt(context, alarm, expected)
-                    }
-                }
+            }.onFailure { t ->
+                Log.w(LOG_TAG, "reconcile skipped alarm ${alarm.id}", t)
             }
         }
 
@@ -262,8 +303,8 @@ object AlarmCoordinator {
                 }
             }
         }
-        ExactScheduler.scheduleSoonestTimer(context)
-        DigitalWidgetProvider.refreshAll(context)
+        scheduleTimers(context)
+        refreshWidgets(context)
     }
 
     // ------------------------------------------------------------ notifications

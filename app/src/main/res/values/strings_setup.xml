@@ -16,6 +16,7 @@
 
     <string name="setup_exact_title">Exact alarms</string>
     <string name="setup_exact_why">Lets an alarm fire at the exact minute instead of being deferred to a later maintenance window.</string>
+    <string name="setup_exact_degraded">Exact access is off: your armed alarms will fire within about a 10-minute window until it is restored.</string>
 
     <string name="setup_dnd_title">Ring through Do Not Disturb</string>
     <string name="setup_dnd_why">Alarm sound and vibration break through even while Do Not Disturb is on.</string>

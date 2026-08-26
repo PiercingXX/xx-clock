@@ -46,6 +46,7 @@
              the system is doing. -->
         <activity
             android:name=".ui.AlarmAlertActivity"
+            android:directBootAware="true"
             android:excludeFromRecents="true"
             android:exported="false"
             android:launchMode="singleTask"
@@ -62,6 +63,7 @@
         <!-- Rings alarms and timers; carries the CATEGORY_ALARM full-screen-intent notification. -->
         <service
             android:name=".service.RingService"
+            android:directBootAware="true"
             android:exported="false"
             android:foregroundServiceType="specialUse">
             <property
@@ -69,17 +71,33 @@
                 android:value="User-scheduled alarm and timer ringing; must play alarm audio and show full-screen alert." />
         </service>
 
-        <!-- Single entry receiver for fire/snooze/dismiss + boot/time-change reconciliation. -->
+        <!-- Single entry receiver for fire/snooze/dismiss + boot/time-change reconciliation.
+             directBootAware: receives LOCKED_BOOT_COMPLETED pre-unlock so alarms re-arm
+             after an overnight reboot without waiting for the user to unlock. -->
         <receiver
             android:name=".receiver.AlarmEventReceiver"
+            android:directBootAware="true"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.USER_UNLOCKED" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Exact-alarm permission granted/revoked (API 31+, manifest-declared only):
+             rebuilds scheduling so a grant restores exact registrations and a
+             revoke re-registers everything onto inexact windows. -->
+        <receiver
+            android:name=".receiver.ExactAlarmPermissionReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
 

@@ -47,7 +47,10 @@ class AlarmsAdapter(
             toggle.setOnCheckedChangeListener { _, checked ->
                 if (muteToggle) return@setOnCheckedChangeListener
                 val alarm = current ?: return@setOnCheckedChangeListener
-                if (alarm.enabled != checked) onToggle(alarm.id, checked)
+                if (alarm.enabled != checked) {
+                    current = alarm.copy(enabled = checked)
+                    onToggle(alarm.id, checked)
+                }
             }
         }
 

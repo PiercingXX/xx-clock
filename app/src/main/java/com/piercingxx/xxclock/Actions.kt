@@ -10,6 +10,11 @@ object Actions {
     const val ADD_MINUTE_TIMER = "com.piercingxx.xxclock.action.ADD_MINUTE_TIMER"
     const val REFRESH_WIDGET = "com.piercingxx.xxclock.action.REFRESH_WIDGET"
 
+    /** System broadcast (API 31+): SCHEDULE_EXACT_ALARM was granted or revoked.
+     *  Delivered only to manifest-declared receivers of the affected app. */
+    const val EXACT_ALARM_PERMISSION_CHANGED =
+        "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"
+
     /** MainActivity extra: which tab to open ("clock" | "alarms" | "timers"). */
     const val EXTRA_TAB = "com.piercingxx.xxclock.extra.TAB"
 

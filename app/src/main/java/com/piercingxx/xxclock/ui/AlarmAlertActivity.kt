@@ -1,5 +1,6 @@
 package com.piercingxx.xxclock.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -41,7 +42,16 @@ class AlarmAlertActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setVolumeControlStream(android.media.AudioManager.STREAM_ALARM)
         setContentView(R.layout.activity_alarm_alert)
+        rebindFromIntent()
+    }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        rebindFromIntent()
+    }
+
+    private fun rebindFromIntent() {
         id = intent.getLongExtra(Actions.EXTRA_ID, -1L)
         isAlarm = intent.getBooleanExtra(Actions.EXTRA_IS_ALARM, true)
 
@@ -57,6 +67,7 @@ class AlarmAlertActivity : AppCompatActivity() {
                 AlarmCoordinator.snooze(this, id, Prefs.SNOOZE_MINUTES_DEFAULT)
                 finish()
             }
+            stopButton.setText(R.string.action_dismiss)
             stopButton.setOnClickListener {
                 AlarmCoordinator.dismiss(this, id)
                 finish()
@@ -68,6 +79,7 @@ class AlarmAlertActivity : AppCompatActivity() {
                 AlarmCoordinator.addMinuteToRingingTimer(this, id)
                 finish()
             }
+            stopButton.setText(R.string.action_stop)
             stopButton.setOnClickListener {
                 AlarmCoordinator.stopTimer(this, id)
                 finish()

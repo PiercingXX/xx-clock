@@ -50,6 +50,7 @@ class AlarmEditDialogFragment : DialogFragment() {
             val picked = result.data?.let {
                 IntentCompat.getParcelableExtra(it, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
             }
+            picked?.let(::keepReadableAfterReboot)
             // Picking "Default" (or Silent, which we hide) comes back as the
             // default-alarm URI: collapse it to null so the alarm keeps
             // FOLLOWING the system default instead of pinning today's tone.
@@ -147,7 +148,7 @@ class AlarmEditDialogFragment : DialogFragment() {
                 mask = mask or Alarm.bitForCalendarDay(calendarDay)
             }
         }
-        val updated = original.copy(
+        val edited = original.copy(
             hour = picker.hour,
             minute = picker.minute,
             daysMask = mask,
@@ -155,6 +156,9 @@ class AlarmEditDialogFragment : DialogFragment() {
             vibrate = vibrateSwitch.isChecked,
             soundUri = chosenSoundUri,
         )
+        // `enabled` is not an editor field: resolve it from the live store so a
+        // toggle made in the list while this dialog was open is never undone.
+        val updated = mergedForSave(edited, AlarmRepository.get(requireContext(), original.id))
         AlarmRepository.save(requireContext(), updated)
         (parentFragment as? Listener)?.onAlarmSaved(updated)
         dismiss()
@@ -178,6 +182,21 @@ class AlarmEditDialogFragment : DialogFragment() {
             soundPicker.launch(intent)
         } catch (_: ActivityNotFoundException) {
             // No system picker on this device: keep the current selection.
+        }
+    }
+
+    /**
+     * Pins the picker's read grant so a storage tone keeps resolving across
+     * reboots. Only providers that flag the grant persistable honor this;
+     * SecurityException means nothing was offered and there is nothing to do —
+     * [KlaxonPlayer] remains the safety net for revoked access at ring time.
+     */
+    private fun keepReadableAfterReboot(uri: Uri) {
+        val resolver = context?.contentResolver ?: return
+        try {
+            resolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (_: SecurityException) {
+            // No persistable grant on this URI (e.g. plain MediaStore tone).
         }
     }
 
@@ -211,7 +230,22 @@ class AlarmEditDialogFragment : DialogFragment() {
         private const val ARG_IS_NEW = "isNew"
         private const val KEY_CHOSEN_SOUND = "chosenSoundUri"
 
-        fun newInstance(alarm: Alarm): AlarmEditDialogFragment =
+        /**
+         * The alarm to persist for an editing session: field edits come from the
+         * session's [snapshot], but `enabled` comes from [live] — the row the
+         * store holds right now — because the dialog has no enable control and
+         * the list can toggle the row after the snapshot was captured. A null
+         * [live] means a brand-new draft that is not in the store yet; it keeps
+         * its own flag.
+         */
+        fun mergedForSave(snapshot: Alarm, live: Alarm?): Alarm =
+            if (live != null && live.id == snapshot.id) {
+                snapshot.copy(enabled = live.enabled)
+            } else {
+                snapshot
+            }
+
+        fun newInstance(alarm: Alarm, isNew: Boolean = false): AlarmEditDialogFragment =
             AlarmEditDialogFragment().apply {
                 arguments = Bundle().apply {
                     putLong(ARG_ID, alarm.id)
@@ -222,6 +256,7 @@ class AlarmEditDialogFragment : DialogFragment() {
                     putBoolean(ARG_ENABLED, alarm.enabled)
                     putBoolean(ARG_VIBRATE, alarm.vibrate)
                     putString(ARG_SOUND, alarm.soundUri)
+                    putBoolean(ARG_IS_NEW, isNew)
                 }
             }
     }

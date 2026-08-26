@@ -265,6 +265,19 @@ class ThemeSyncApplierTest {
     }
 
     @Test
+    fun `storedTheme does not open credential-encrypted prefs before first unlock`() {
+        val storedThemeFn = applierSource.substringAfter("fun storedTheme").substringBefore("fun effectiveTheme")
+        assertTrue(
+            "storedTheme must refuse CE prefs while UserManager.isUserUnlocked is false",
+            storedThemeFn.contains("isUserUnlocked"),
+        )
+        assertTrue(
+            "a CE SharedPreferences throw must not escape storedTheme (LOCKED_BOOT crash)",
+            storedThemeFn.contains("runCatching"),
+        )
+    }
+
+    @Test
     fun `dialog windows revoke force dark too`() {
         // A dialog owns its own decor view and RenderNode, so the activity's
         // revocation does not reach it.

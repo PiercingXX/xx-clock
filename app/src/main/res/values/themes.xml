@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- PiercingXX: monochrome + one accent. Strong emphasis inverts
-         (Signal block, Ink text — see colorOnPrimary / secondaryContainer).
+    <!-- PiercingXX: monochrome + one accent (strong emphasis inverts).
 
-         DayNight here does NOT mean "follow the system". The night qualifier
-         is an internal switch ThemeSyncApplier throws from the CHOSEN theme's
-         isDark (MODE_NIGHT_YES/NO, pinned before the first activity inflates
-         and never left on FOLLOW_SYSTEM). This day copy is what a Paper/Mist
-         pick selects; values-night/themes.xml is what a dark pick selects. -->
+         DayNight does NOT mean follow-the-system: the night qualifier is an
+         internal switch ThemeSyncApplier throws from the CHOSEN theme's
+         isDark, pinned before the first activity inflates. This day copy is
+         what Paper/Mist select; values-night/themes.xml is what a dark pick
+         selects. See CONTRACT.md, "Theme authority". -->
     <style name="Theme.XxClock" parent="Theme.Material3.DayNight.NoActionBar" tools:targetApi="31">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/on_primary</item>
@@ -30,41 +29,29 @@
         <item name="fontFamily">@font/jetbrains_mono</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
-        <!-- The last way the system could still recolor a light pick: with
-             system dark mode on, the platform force-darks light-themed views.
-             A Paper pick must stay Paper at midnight, so opt out. (API 29 =
-             minSdk, so no -v29 variant is needed.) -->
+        <!-- With system dark mode on, the platform force-darks light-themed
+             views; opt out so a light pick stays light. (API 29 = minSdk, so
+             no -v29 variant.) -->
         <item name="android:forceDarkAllowed">false</item>
 
-        <!-- The Android 12+ starting window: the frame the platform draws
-             before the first activity exists. There is no way to decline it,
-             only to empty it. Its defaults stamp the launcher icon over a
-             ground the platform derives from the theme — a mark this app never
-             chose to show, and a different one in every family app.
-
-             This is the one surface the pure theme rule cannot reach.
-             ThemeSyncApplier needs a stored preference and a live window; this
-             window predates both, so the ground here is a static resource and
-             stays family ink under every pick. Under Paper or Mist that is a
-             dark frame ahead of a light clock — unavoidable, since a starting
-             window has no way to read a runtime choice, and ink is the family
-             default, so it is the right constant to be wrong with.
+        <!-- The Android 12+ starting window is drawn before the first activity
+             exists, so ThemeSyncApplier cannot reach it — no stored preference,
+             no live window yet. Emptied statically: transparent icon, no
+             branding, family-ink ground under every pick.
 
              Repeated verbatim in values-night/themes.xml: styles do not merge
-             across configs, so a dark pick — which selects that copy — would
-             otherwise inherit none of this and get the launcher icon back. -->
+             across configs, so a dark pick would otherwise inherit none of
+             this. -->
         <item name="android:windowSplashScreenBackground">@color/pxx_ink</item>
         <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
         <item name="android:windowSplashScreenBrandingImage">@null</item>
     </style>
 
-    <!-- Full-screen alarm alert. Deliberately NOT DayNight: the layout hardcodes
-         an ink ground and Signal-white digits, so its Material chrome (the
-         snooze/stop buttons, the outline) must be dark too. Under the shared
-         DayNight theme a light pick — or, before the theme became a pure
-         choice, plain daytime — gave this screen ink-on-ink buttons. Constant
-         by design, with no time-of-day input of its own. -->
+    <!-- Full-screen alarm alert. Deliberately NOT DayNight: the layout
+         hardcodes an ink ground, so its Material chrome (snooze/stop buttons,
+         outline) must be dark too — under a DayNight parent a light pick gave
+         this screen ink-on-ink buttons. Constant by design. -->
     <style name="Theme.XxClock.AlarmAlert" parent="Theme.Material3.Dark.NoActionBar" tools:targetApi="31">
         <item name="colorPrimary">@color/pxx_signal</item>
         <item name="colorOnPrimary">@color/pxx_ink</item>
@@ -89,12 +76,9 @@
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:forceDarkAllowed">false</item>
 
-        <!-- The alarm screen is the one that cold-starts at 3 a.m., from a
-             process the system just woke — so it is the one most likely to show
-             a starting window at all. The dotted name does not inherit here:
-             the explicit parent is Material3.Dark, so the base theme's
-             suppression (see Theme.XxClock) does not reach this style and has
-             to be repeated. Constant ink, like everything else on this screen. -->
+        <!-- Same starting-window emptying as Theme.XxClock. Repeated because
+             the explicit Material3.Dark parent means the base style's
+             suppression does not inherit through the dotted name. -->
         <item name="android:windowSplashScreenBackground">@color/pxx_ink</item>
         <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
