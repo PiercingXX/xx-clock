@@ -47,6 +47,8 @@ time(ctx, epochMs): String          // locale short time
 until(nowMs, targetMs): String      // "2 d 7 h 53 m"
 
 // constants (Actions.kt): EXTRA_TAB on MainActivity = "clock"|"alarms"|"timers"
+// MainActivity also handles AlarmClock.ACTION_SHOW_ALARMS (Alarms tab) and
+// CATEGORY_APP_CLOCK (clock face) so it is the system/launcher clock app.
 ```
 
 ## File ownership (STRICT — touch ONLY your files)

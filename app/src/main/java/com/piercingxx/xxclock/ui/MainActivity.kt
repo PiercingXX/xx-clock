@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.provider.AlarmClock
 import android.widget.ImageButton
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -47,19 +48,18 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        val requested = intent?.getStringExtra(Actions.EXTRA_TAB)?.let(::normalizeTab)
+        val requested = tabFrom(intent)
         val startTab = requested ?: prefs.getString(KEY_TAB, TAB_CLOCK) ?: TAB_CLOCK
         nav.selectedItemId = itemIdFor(startTab)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        // Widget taps and the system next-alarm chip reuse this instance
-        // (singleTop/clearTop): honor a newly delivered tab request.
+        setIntent(intent)
+        // Widget taps, SHOW_ALARMS, and the system next-alarm chip reuse this
+        // instance (singleTop): honor a newly delivered tab request.
         if (!isFinishing && ::nav.isInitialized) {
-            intent.getStringExtra(Actions.EXTRA_TAB)?.let(::normalizeTab)?.let {
-                nav.selectedItemId = itemIdFor(it)
-            }
+            tabFrom(intent)?.let { nav.selectedItemId = itemIdFor(it) }
         }
     }
 
@@ -67,12 +67,6 @@ class MainActivity : AppCompatActivity() {
         R.id.nav_alarms -> AlarmsFragment()
         R.id.nav_timers -> TimersFragment()
         else -> ClockFragment()
-    }
-
-    private fun normalizeTab(value: String): String = when (value.lowercase()) {
-        TAB_ALARMS -> TAB_ALARMS
-        TAB_TIMERS -> TAB_TIMERS
-        else -> TAB_CLOCK
     }
 
     private fun tabKeyFor(itemId: Int): String = when (itemId) {
@@ -91,8 +85,31 @@ class MainActivity : AppCompatActivity() {
         private const val UI_PREFS = "xx_clock_ui"
         private const val KEY_TAB = "tab"
         private const val KEY_NOTIF_ASKED = "notif_asked"
-        private const val TAB_CLOCK = "clock"
-        private const val TAB_ALARMS = "alarms"
-        private const val TAB_TIMERS = "timers"
+        internal const val TAB_CLOCK = "clock"
+        internal const val TAB_ALARMS = "alarms"
+        internal const val TAB_TIMERS = "timers"
+
+        /**
+         * Tab implied by the incoming intent. [Actions.EXTRA_TAB] wins; otherwise
+         * [AlarmClock.ACTION_SHOW_ALARMS] opens Alarms (xx-launcher clock widget
+         * and any system "show alarms" caller). APP_CLOCK is the clock face.
+         */
+        internal fun tabFrom(intent: Intent?): String? {
+            if (intent == null) return null
+            intent.getStringExtra(Actions.EXTRA_TAB)?.let { return normalizeTab(it) }
+            if (intent.action == AlarmClock.ACTION_SHOW_ALARMS) return TAB_ALARMS
+            if (intent.action == Intent.ACTION_MAIN &&
+                intent.hasCategory("android.intent.category.APP_CLOCK")
+            ) {
+                return TAB_CLOCK
+            }
+            return null
+        }
+
+        internal fun normalizeTab(value: String): String = when (value.lowercase()) {
+            TAB_ALARMS -> TAB_ALARMS
+            TAB_TIMERS -> TAB_TIMERS
+            else -> TAB_CLOCK
+        }
     }
 }
