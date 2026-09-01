@@ -25,16 +25,19 @@ class SharedPreferencesThemeKeyValueStore(
     override fun getString(key: String): String? = prefs.getString(key, null)
 
     override fun putString(key: String, value: String?) {
+        // commit() (not apply()): the theme is read back on every activity
+        // create/resume, and apply() can theoretically be read before the async
+        // write lands — an activity could paint the stale ground once.
         prefs.edit().apply {
             if (value == null) remove(key) else putString(key, value)
-        }.apply()
+        }.commit()
     }
 
     override fun getBoolean(key: String, default: Boolean): Boolean =
         prefs.getBoolean(key, default)
 
     override fun putBoolean(key: String, value: Boolean) {
-        prefs.edit().putBoolean(key, value).apply()
+        prefs.edit().putBoolean(key, value).commit()
     }
 }
 
