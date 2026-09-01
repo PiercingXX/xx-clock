@@ -17,3 +17,6 @@ local.properties
 *.keystore
 *.apk
 keystore.properties
+
+# Skippy runtime bookkeeping — never tracked
+.skippy/
