@@ -24,3 +24,6 @@ keystore.properties
 # Estate mill/audit scratch — never tracked
 .nagatha/
 .bilby/
+
+# Mill-seeded venv is a house symlink or share dir — never tracked
+.venv
