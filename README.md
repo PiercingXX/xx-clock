@@ -58,9 +58,12 @@ JDK 21 running Gradle 8.11.1, JVM target 17, SDK platform 35. AGP 8.9.1, Kotlin
 ```bash
 export ANDROID_HOME=$HOME/Android/Sdk
 ./gradlew assembleRelease       # -> app/build/outputs/apk/release/
-./gradlew testDebugUnitTest     # 154 JVM unit tests
+./gradlew testDebugUnitTest     # 156 JVM unit tests
 ./gradlew lint                  # 0 errors
 ```
+
+CI (`.github/workflows/ci.yml`) runs `testDebugUnitTest` on push, pull request,
+and `workflow_dispatch`. No emulator, no instrumented tests.
 
 Sideload the APK, allow **Install unknown apps** for whatever opened it, then
 walk **Setup** (gear, top right). Widget: long-press home → Widgets → XX Clock.

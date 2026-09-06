@@ -9,8 +9,8 @@ Keep this package **out** of Nope-Mode.
 
 ```
 Status: alarms/timers/widget/direct-boot/AlarmClock intents exist.
-Device smoke never run. Test count drifts (TODO 140 vs README 154).
-No CI.
+Device smoke never run. 156 JVM unit tests. CI runs testDebugUnitTest
+on push/PR/workflow_dispatch.
 ```
 
 ---
@@ -57,8 +57,8 @@ exemption.
 
 ## Housekeeping (not ship blockers)
 
-- [ ] Align test count in this file and README after `./gradlew testDebugUnitTest`
-- [ ] Add a CI workflow (test + lint) if sibling apps keep theirs
+- [x] Align test count in this file and README after `./gradlew testDebugUnitTest` (156)
+- [x] Add a CI workflow (`testDebugUnitTest` on push/PR/workflow_dispatch; no instrumented tests)
 - [ ] Signed sideload when you want it daily; unsigned `assembleRelease` without a keystore stays the contract
 
 ---
