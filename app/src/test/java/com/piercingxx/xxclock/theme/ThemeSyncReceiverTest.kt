@@ -80,6 +80,23 @@ class ThemeSyncReceiverTest {
     }
 
     @Test
+    fun `manifest gates the receiver with THEME_SYNC`() {
+        val receiverBlock = manifestText
+            .substringAfter(".theme.ThemeSyncReceiver")
+            .substringBefore("</receiver>")
+        assertTrue(
+            "ThemeSyncReceiver must require com.piercingxx.xxlauncher.permission.THEME_SYNC",
+            receiverBlock.contains(
+                "android:permission=\"com.piercingxx.xxlauncher.permission.THEME_SYNC\"",
+            ),
+        )
+        assertTrue(
+            "ThemeSyncReceiver must stay exported so the launcher broadcast can land",
+            receiverBlock.contains("android:exported=\"true\""),
+        )
+    }
+
+    @Test
     fun `manifest registers the receiver for the launcher theme-changed action`() {
         assertTrue(
             "AndroidManifest.xml must register ${ThemeSyncReceiver.ACTION_THEME_CHANGED}",

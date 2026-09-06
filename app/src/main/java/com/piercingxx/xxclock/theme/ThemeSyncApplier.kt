@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import com.piercingxx.xxclock.ui.AlarmAlertActivity
+import com.piercingxx.xxclock.widget.DigitalWidgetProvider
 import java.util.Collections
 import java.util.WeakHashMap
 
@@ -54,6 +55,9 @@ object ThemeSyncApplier {
     /** Activities currently started, repainted in place on a live theme change. */
     private val visible: MutableSet<Activity> =
         Collections.newSetFromMap(WeakHashMap())
+
+    /** Process [Application], used to refresh the home widget after a theme change. */
+    private var app: Application? = null
 
     /**
      * The persisted chosen theme, or null when nothing has ever been chosen.
@@ -121,7 +125,11 @@ object ThemeSyncApplier {
      * process — including the theme receiver waking a cold process.
      */
     fun init(app: Application) {
+        this.app = app
         applyNightMode(activeTheme(app))
+        if (app.getSystemService(UserManager::class.java)?.isUserUnlocked == true) {
+            refreshWidget()
+        }
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPostCreated(activity: Activity, savedInstanceState: Bundle?) {
                 // Post-create: setContentView has run, the decor exists. Also
@@ -163,6 +171,13 @@ object ThemeSyncApplier {
         for (activity in visible.toList()) {
             applyToActivity(activity, theme)
         }
+        refreshWidget()
+    }
+
+    /** Pushes the last synced theme onto every assigned home widget. */
+    private fun refreshWidget() {
+        val ctx = app ?: return
+        runCatching { DigitalWidgetProvider.refreshAll(ctx) }
     }
 
     /** Pins the process to the chosen theme's night mode. See [nightModeFor]. */

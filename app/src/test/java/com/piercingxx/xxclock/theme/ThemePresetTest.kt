@@ -115,6 +115,20 @@ class ThemePresetTest {
         assertEquals(FOREGROUND_INK, foregroundFor(ThemePreset.MIST.background))
     }
 
+    @Test
+    fun `widget colors follow the last synced ground and contrast rule`() {
+        val paper = widgetColors(resolveSyncedTheme("Paper", null)!!)
+        assertEquals(ThemePreset.PAPER.background.toInt(), paper.background)
+        assertEquals(FOREGROUND_INK.toInt(), paper.primary)
+        assertEquals((FOREGROUND_INK.toInt() and 0x00FFFFFF) or (0x80 shl 24), paper.secondary)
+
+        val night = widgetColors(
+            SyncedTheme(ThemePreset.AMOLED_NIGHT.background, isDark = true, presetKey = "amoled-night"),
+        )
+        assertEquals(ThemePreset.AMOLED_NIGHT.background.toInt(), night.background)
+        assertEquals(FOREGROUND_WHITE.toInt(), night.primary)
+    }
+
     // ---- broadcast resolution ----
 
     @Test

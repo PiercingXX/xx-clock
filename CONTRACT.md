@@ -113,8 +113,10 @@ preset flips the app to its night look (`AppCompatDelegate.MODE_NIGHT_YES`)
 and the exact preset ground is painted over window background, root content,
 and status/nav bars; Paper/Mist flip to the day look (whose colors already ARE
 Paper and Mist). "Custom" is honored via the BACKGROUND extra + contrast rule.
-`AlarmAlertActivity` keeps its purpose-built always-dark look; widget and
-notification surfaces are out of scope.
+`AlarmAlertActivity` keeps its purpose-built always-dark look; notification
+surfaces are out of scope. The home widget paints background and type from
+the last synced `ThemeStore` theme (`RemoteViews.setBackgroundColor` /
+`setTextColor` on each update, including after a broadcast or in-app pick).
 
 The night resource set is selected by the app's own pinned night mode, never by
 the OS. See **Theme authority** at the end of this document — that section is a
@@ -126,9 +128,10 @@ Files (all under `theme/`):
   `SyncedTheme` + `resolveSyncedTheme(name, backgroundExtra)`.
 - `ThemeStore.kt` — persistence over the `ThemeKeyValueStore` seam; real store
   is SharedPreferences `xx_clock_theme`.
-- `ThemeSyncReceiver.kt` — manifest-declared, exported, injectable seams
-  (action/name/background extractors, persist, live-apply) so JVM tests drive
-  `onReceive` without mocking Android.
+- `ThemeSyncReceiver.kt` — manifest-declared, exported, gated by
+  `android:permission` `com.piercingxx.xxlauncher.permission.THEME_SYNC`,
+  injectable seams (action/name/background extractors, persist, live-apply)
+  so JVM tests drive `onReceive` without mocking Android.
 - `ThemeSyncApplier.kt` — night mode + ground painting on activity
   post-create/resume via `ActivityLifecycleCallbacks` registered in `ClockApp`;
   repaints visible activities immediately when a broadcast lands. Also owns the
@@ -147,12 +150,12 @@ the `Theme.XxClock.AlarmAlert` style and `android:forceDarkAllowed=false`,
 `values-night/themes.xml` gained the same opt-out, and the manifest's
 `AlarmAlertActivity` entry gained `android:theme`. Still no new dependencies.
 
-Sender policy: deliberately unauthenticated — the receiver is exported with no
-permission and no sender check, so any app on the device may send the action
-and restyle the clock. Accepted because the payload only moves the look and
-nothing leaves the device, and a manifest receiver has no reliable sender
-identity below API 34 (minSdk is 29) short of a signature permission held by
-xx-launcher.
+Sender policy: the receiver is exported so the launcher's explicit
+package-targeted broadcast can land, and gated with
+`android:permission="com.piercingxx.xxlauncher.permission.THEME_SYNC"`.
+Only a sender that holds that signature permission (xx-launcher, which
+declares it) can restyle the clock. This app `uses-permission` THEME_SYNC;
+it does not `<permission>`-declare it.
 
 Tests (JUnit4, pure JVM, seams instead of Robolectric):
 - `theme/ThemePresetTest`: all 7 display names + case-insensitive + unknown/null;
@@ -229,10 +232,13 @@ Consequences any future change must preserve:
   (parent `Theme.Material3.Dark.NoActionBar`, no `values-night/` override) so
   its Material chrome matches its hardcoded ink ground. Constant by design,
   with no ambient input of its own.
-- Widget and notification surfaces draw only from `values/`-only colors
-  (`widget_background`, `widget_text`, `widget_secondary`, `background_dark`,
-  `surface_dark`), so they do not vary by configuration either. Do not add
-  `values-night/` overrides for those names.
+- Notification surfaces draw only from `values/`-only colors
+  (`background_dark`, `surface_dark`), so they do not vary by configuration.
+  Do not add `values-night/` overrides for those names. The home widget's
+  layout still defaults to those `widget_*` colors, then `DigitalWidgetProvider`
+  overpaints ground and type from the last synced theme (RemoteViews cannot
+  keep the rounded `widget_bg` shape while recoloring it, so the live widget
+  is a solid ground).
 
 ### The device setting that beats all of the above
 

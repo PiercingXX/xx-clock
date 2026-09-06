@@ -80,6 +80,21 @@ fun foregroundFor(background: Long): Long =
     if (prefersDarkForeground(background)) FOREGROUND_INK else FOREGROUND_WHITE
 
 /**
+ * RemoteViews colors for the home widget, derived from the last synced theme.
+ * Secondary is the contrast-rule foreground at 50% alpha (date / next-alarm).
+ */
+data class WidgetColors(val background: Int, val primary: Int, val secondary: Int)
+
+fun widgetColors(theme: SyncedTheme): WidgetColors {
+    val primary = foregroundFor(theme.background).toInt()
+    return WidgetColors(
+        background = theme.background.toInt(),
+        primary = primary,
+        secondary = (primary and 0x00FFFFFF) or (0x80 shl 24),
+    )
+}
+
+/**
  * The theme state a launcher broadcast resolves to: the exact ground color to
  * paint and whether the app should wear its night look (white foreground) or
  * its day look (ink foreground).

@@ -11,14 +11,17 @@ import android.widget.RemoteViews
 import com.piercingxx.xxclock.Actions
 import com.piercingxx.xxclock.R
 import com.piercingxx.xxclock.repo.AlarmRepository
+import com.piercingxx.xxclock.theme.ThemeSyncApplier
+import com.piercingxx.xxclock.theme.widgetColors
 import com.piercingxx.xxclock.util.Fmt
 
 /**
  * Home-screen digital clock widget.
  *
- * Time/date are self-updating TextClocks; this provider only pushes the
- * next-alarm line (and re-renders on time/timezone changes). The core engine
- * calls [refreshAll] after every alarm mutation.
+ * Time/date are self-updating TextClocks; this provider pushes the
+ * next-alarm line and paints ground/type from the last synced theme.
+ * The core engine calls [refreshAll] after every alarm mutation; theme
+ * changes call it too.
  */
 class DigitalWidgetProvider : AppWidgetProvider() {
 
@@ -51,6 +54,11 @@ class DigitalWidgetProvider : AppWidgetProvider() {
     private fun buildViews(context: Context): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.clock_widget)
         views.setOnClickPendingIntent(R.id.widget_root, mainActivityPendingIntent(context))
+        val colors = widgetColors(ThemeSyncApplier.activeTheme(context))
+        views.setInt(R.id.widget_root, "setBackgroundColor", colors.background)
+        views.setTextColor(R.id.widget_time, colors.primary)
+        views.setTextColor(R.id.widget_date, colors.secondary)
+        views.setTextColor(R.id.widget_next_alarm, colors.secondary)
 
         val next = AlarmRepository.nextArmed(context)
         if (next == null) {
