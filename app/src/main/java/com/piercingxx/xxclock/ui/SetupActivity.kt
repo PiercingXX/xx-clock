@@ -10,6 +10,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.piercingxx.xxclock.R
+import com.piercingxx.xxclock.log.LogsUi
 import com.piercingxx.xxclock.alarm.AlarmCoordinator
 import com.piercingxx.xxclock.permissions.PermissionsGate
 import com.piercingxx.xxclock.scheduler.ExactScheduler
@@ -87,6 +88,7 @@ class SetupActivity : AppCompatActivity() {
                 startActivity(row.request(this))
             }
         }
+        findViewById<Button>(R.id.btn_logs).setOnClickListener { LogsUi.show(this) }
         findViewById<Button>(R.id.btn_done).setOnClickListener { finish() }
         buildThemeRows()
     }
