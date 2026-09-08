@@ -3,6 +3,7 @@ package com.piercingxx.xxclock
 import android.app.Application
 import android.os.UserManager
 import com.piercingxx.xxclock.alarm.AlarmCoordinator
+import com.piercingxx.xxclock.log.AppLog
 import com.piercingxx.xxclock.data.ClockStore
 import com.piercingxx.xxclock.notify.Channels
 import com.piercingxx.xxclock.theme.ThemeSyncApplier
@@ -11,6 +12,9 @@ class ClockApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        AppLog.init(this)
+        AppLog.installCrashHandler()
+        AppLog.i("app", "start")
         // CE SharedPreferences handle: receiver paths run on a device-protected
         // context, and createCredentialProtectedStorageContext() is @hide.
         ClockStore.attachCredentialApp(this)
