@@ -20,6 +20,14 @@ import java.util.Collections
 import java.util.WeakHashMap
 
 /**
+ * A screen that applies extra palette work after the window ground is painted
+ * (programmatic cards, adapters, dialogs).
+ */
+interface ThemedScreen {
+    fun onSyncedThemeApplied(palette: ClockPalette)
+}
+
+/**
  * Applies the chosen theme ([SyncedTheme]) to the running UI.
  *
  * The ground is a choice, never an observation: exactly two inputs may move it
@@ -58,6 +66,19 @@ object ThemeSyncApplier {
 
     /** Process [Application], used to refresh the home widget after a theme change. */
     private var app: Application? = null
+
+    private val themedScreens: MutableSet<ThemedScreen> =
+        Collections.newSetFromMap(WeakHashMap())
+
+    fun registerThemedScreen(screen: ThemedScreen) {
+        themedScreens += screen
+    }
+
+    fun unregisterThemedScreen(screen: ThemedScreen) {
+        themedScreens -= screen
+    }
+
+    fun palette(context: Context): ClockPalette = paletteFor(activeTheme(context))
 
     /**
      * The persisted chosen theme, or null when nothing has ever been chosen.
@@ -168,8 +189,12 @@ object ThemeSyncApplier {
      */
     fun onThemeChanged(theme: SyncedTheme) {
         applyNightMode(theme)
+        val palette = paletteFor(theme)
         for (activity in visible.toList()) {
             applyToActivity(activity, theme)
+        }
+        for (screen in themedScreens.toList()) {
+            screen.onSyncedThemeApplied(palette)
         }
         refreshWidget()
     }
@@ -199,6 +224,9 @@ object ThemeSyncApplier {
         disableForceDark(window)
         if (activity is AlarmAlertActivity) return // always-dark alarm screen keeps its look
         applyGround(window, activity, theme)
+        val palette = paletteFor(theme)
+        PalettePainter.apply(activity.findViewById(android.R.id.content), palette)
+        (activity as? ThemedScreen)?.onSyncedThemeApplied(palette)
     }
 
     /**

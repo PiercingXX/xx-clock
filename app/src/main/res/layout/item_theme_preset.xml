@@ -19,7 +19,8 @@
         android:layout_width="16dp"
         android:layout_height="16dp"
         android:background="@drawable/theme_swatch"
-        android:importantForAccessibility="no" />
+        android:importantForAccessibility="no"
+        android:tag="theme_keep" />
 
     <TextView
         android:id="@+id/theme_row_name"

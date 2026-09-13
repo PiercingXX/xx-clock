@@ -3,6 +3,7 @@ package com.piercingxx.xxclock.ui
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.graphics.drawable.ColorDrawable
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Bundle
@@ -22,9 +23,13 @@ import com.google.android.material.textfield.TextInputEditText
 import com.piercingxx.xxclock.R
 import com.piercingxx.xxclock.model.Alarm
 import com.piercingxx.xxclock.repo.AlarmRepository
+import com.piercingxx.xxclock.theme.ClockPalette
+import com.piercingxx.xxclock.theme.PalettePainter
+import com.piercingxx.xxclock.theme.ThemedScreen
+import com.piercingxx.xxclock.theme.ThemeSyncApplier
 import java.util.Calendar
 
-class AlarmEditDialogFragment : DialogFragment() {
+class AlarmEditDialogFragment : DialogFragment(), ThemedScreen {
 
     interface Listener {
         fun onAlarmSaved(alarm: Alarm)
@@ -134,6 +139,22 @@ class AlarmEditDialogFragment : DialogFragment() {
         view.findViewById<View>(R.id.btn_save).setOnClickListener { save(picker, dayChipIds, labelInput, vibrateSwitch) }
 
         return view
+    }
+
+    override fun onStart() {
+        super.onStart()
+        ThemeSyncApplier.registerThemedScreen(this)
+        onSyncedThemeApplied(ThemeSyncApplier.palette(requireContext()))
+    }
+
+    override fun onStop() {
+        ThemeSyncApplier.unregisterThemedScreen(this)
+        super.onStop()
+    }
+
+    override fun onSyncedThemeApplied(palette: ClockPalette) {
+        dialog?.window?.setBackgroundDrawable(ColorDrawable(palette.surfaceMid.toInt()))
+        PalettePainter.apply(view, palette)
     }
 
     private fun save(

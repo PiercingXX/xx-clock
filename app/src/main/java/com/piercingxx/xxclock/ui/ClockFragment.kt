@@ -11,12 +11,16 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.piercingxx.xxclock.R
 import com.piercingxx.xxclock.repo.AlarmRepository
+import com.piercingxx.xxclock.theme.ClockPalette
+import com.piercingxx.xxclock.theme.PalettePainter
+import com.piercingxx.xxclock.theme.ThemedScreen
+import com.piercingxx.xxclock.theme.ThemeSyncApplier
 import com.piercingxx.xxclock.util.Fmt
 
 // AnalogClock is deprecated platform-wise but remains the only zero-maintenance
 // analog view that also works inside RemoteViews; intentional use for v1.
 @Suppress("DEPRECATION")
-class ClockFragment : Fragment(R.layout.fragment_clock) {
+class ClockFragment : Fragment(R.layout.fragment_clock), ThemedScreen {
 
     private lateinit var timeText: TextClock
     private lateinit var analogClock: android.widget.AnalogClock
@@ -37,12 +41,28 @@ class ClockFragment : Fragment(R.layout.fragment_clock) {
             applyStyle()
         }
         applyStyle()
+        onSyncedThemeApplied(ThemeSyncApplier.palette(requireContext()))
+    }
+
+    override fun onStart() {
+        super.onStart()
+        ThemeSyncApplier.registerThemedScreen(this)
+    }
+
+    override fun onStop() {
+        ThemeSyncApplier.unregisterThemedScreen(this)
+        super.onStop()
     }
 
     override fun onResume() {
         super.onResume()
         applyStyle()
         refreshNextAlarm()
+        view?.let { onSyncedThemeApplied(ThemeSyncApplier.palette(requireContext())) }
+    }
+
+    override fun onSyncedThemeApplied(palette: ClockPalette) {
+        PalettePainter.apply(view, palette)
     }
 
     private fun prefs(): SharedPreferences =

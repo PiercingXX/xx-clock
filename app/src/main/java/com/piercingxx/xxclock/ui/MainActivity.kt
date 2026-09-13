@@ -13,8 +13,11 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.piercingxx.xxclock.Actions
 import com.piercingxx.xxclock.R
 import com.piercingxx.xxclock.permissions.PermissionsGate
+import com.piercingxx.xxclock.theme.ClockPalette
+import com.piercingxx.xxclock.theme.PalettePainter
+import com.piercingxx.xxclock.theme.ThemedScreen
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ThemedScreen {
 
     private lateinit var nav: BottomNavigationView
 
@@ -51,6 +54,10 @@ class MainActivity : AppCompatActivity() {
         val requested = tabFrom(intent)
         val startTab = requested ?: prefs.getString(KEY_TAB, TAB_CLOCK) ?: TAB_CLOCK
         nav.selectedItemId = itemIdFor(startTab)
+    }
+
+    override fun onSyncedThemeApplied(palette: ClockPalette) {
+        PalettePainter.apply(findViewById(android.R.id.content), palette)
     }
 
     override fun onNewIntent(intent: Intent) {

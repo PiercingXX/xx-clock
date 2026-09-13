@@ -15,7 +15,10 @@ import com.piercingxx.xxclock.alarm.AlarmCoordinator
 import com.piercingxx.xxclock.permissions.PermissionsGate
 import com.piercingxx.xxclock.scheduler.ExactScheduler
 import com.piercingxx.xxclock.theme.CUSTOM_PRESET_KEY
+import com.piercingxx.xxclock.theme.ClockPalette
+import com.piercingxx.xxclock.theme.PalettePainter
 import com.piercingxx.xxclock.theme.SharedPreferencesThemeKeyValueStore
+import com.piercingxx.xxclock.theme.ThemedScreen
 import com.piercingxx.xxclock.theme.ThemePreset
 import com.piercingxx.xxclock.theme.ThemeStore
 import com.piercingxx.xxclock.theme.ThemeSyncApplier
@@ -35,7 +38,7 @@ import com.piercingxx.xxclock.theme.resolveManualTheme
  * [ThemeStore]-persist + [ThemeSyncApplier]-repaint path, so downstream the
  * two are indistinguishable (last writer — tap or broadcast — wins).
  */
-class SetupActivity : AppCompatActivity() {
+class SetupActivity : AppCompatActivity(), ThemedScreen {
 
     private data class ChecklistRow(
         val granted: (Context) -> Boolean,
@@ -104,6 +107,11 @@ class SetupActivity : AppCompatActivity() {
         }
         lastKnownExactGranted = exactGranted
         refreshStates()
+        refreshThemeRows()
+    }
+
+    override fun onSyncedThemeApplied(palette: ClockPalette) {
+        PalettePainter.apply(findViewById(android.R.id.content), palette)
         refreshThemeRows()
     }
 

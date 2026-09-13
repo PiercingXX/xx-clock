@@ -211,4 +211,29 @@ class ThemePresetTest {
         assertNull(resolveManualTheme("neon", lastCustomBackground = 0xFF000000L))
         assertNull(resolveManualTheme(null, lastCustomBackground = 0xFF000000L))
     }
+
+    @Test
+    fun `each preset derives a distinct card surface from its own ground`() {
+        val surfaces = ThemePreset.entries.map { paletteFor(resolveManualTheme(it.key)!!).surfaceMid }
+        assertEquals(ThemePreset.entries.size, surfaces.toSet().size)
+    }
+
+    @Test
+    fun `light presets invert type to ink on paper`() {
+        for (preset in listOf(ThemePreset.PAPER, ThemePreset.MIST)) {
+            val palette = paletteFor(resolveManualTheme(preset.key)!!)
+            assertEquals(preset.background, palette.background)
+            assertEquals(FOREGROUND_INK, palette.accent)
+            assertEquals(preset.background, palette.onAccent)
+        }
+    }
+
+    @Test
+    fun `amoled night keeps the vendored ladder`() {
+        val palette = paletteFor(resolveManualTheme(ThemePreset.AMOLED_NIGHT.key)!!)
+        assertEquals(AMOLED_SURFACE_LOW, palette.surfaceLow)
+        assertEquals(AMOLED_SURFACE_MID, palette.surfaceMid)
+        assertEquals(AMOLED_SURFACE_HIGH, palette.surfaceHigh)
+        assertEquals(FOREGROUND_WHITE, palette.accent)
+    }
 }

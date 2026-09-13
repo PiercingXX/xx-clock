@@ -12,6 +12,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.piercingxx.xxclock.R
 import com.piercingxx.xxclock.model.Alarm
+import com.piercingxx.xxclock.theme.ClockPalette
+import com.piercingxx.xxclock.theme.PalettePainter
+import com.piercingxx.xxclock.theme.ThemeSyncApplier
+import com.piercingxx.xxclock.theme.paletteFor
 import java.util.Calendar
 
 class AlarmsAdapter(
@@ -19,6 +23,13 @@ class AlarmsAdapter(
     private val onToggle: (id: Long, enabled: Boolean) -> Unit,
     private val onRowLongClick: (Alarm) -> Unit,
 ) : ListAdapter<Alarm, AlarmsAdapter.Holder>(DIFF) {
+
+    var palette: ClockPalette = paletteFor(ThemeSyncApplier.DEFAULT_THEME)
+        set(value) {
+            if (field == value) return
+            field = value
+            notifyItemRangeChanged(0, itemCount)
+        }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder =
         Holder(LayoutInflater.from(parent.context).inflate(R.layout.item_alarm, parent, false))
@@ -69,6 +80,7 @@ class AlarmsAdapter(
                 label.visibility = View.VISIBLE
             }
             vibrateIcon.visibility = if (alarm.vibrate) View.VISIBLE else View.GONE
+            PalettePainter.apply(itemView, palette)
         }
 
         private fun formatTime(alarm: Alarm): String {

@@ -10,10 +10,14 @@ import com.google.android.material.snackbar.Snackbar
 import com.piercingxx.xxclock.R
 import com.piercingxx.xxclock.model.Alarm
 import com.piercingxx.xxclock.repo.AlarmRepository
+import com.piercingxx.xxclock.theme.ClockPalette
+import com.piercingxx.xxclock.theme.PalettePainter
+import com.piercingxx.xxclock.theme.ThemedScreen
+import com.piercingxx.xxclock.theme.ThemeSyncApplier
 import com.piercingxx.xxclock.util.Fmt
 import java.util.Calendar
 
-class AlarmsFragment : Fragment(R.layout.fragment_alarms), AlarmEditDialogFragment.Listener {
+class AlarmsFragment : Fragment(R.layout.fragment_alarms), AlarmEditDialogFragment.Listener, ThemedScreen {
 
     private lateinit var adapter: AlarmsAdapter
 
@@ -33,11 +37,28 @@ class AlarmsFragment : Fragment(R.layout.fragment_alarms), AlarmEditDialogFragme
         }
         view.findViewById<FloatingActionButton>(R.id.fab_add_alarm)
             .setOnClickListener { openEditor(newDraftAlarm(), isNew = true) }
+        onSyncedThemeApplied(ThemeSyncApplier.palette(ctx))
+    }
+
+    override fun onStart() {
+        super.onStart()
+        ThemeSyncApplier.registerThemedScreen(this)
+    }
+
+    override fun onStop() {
+        ThemeSyncApplier.unregisterThemedScreen(this)
+        super.onStop()
     }
 
     override fun onResume() {
         super.onResume()
         reload()
+        view?.let { onSyncedThemeApplied(ThemeSyncApplier.palette(requireContext())) }
+    }
+
+    override fun onSyncedThemeApplied(palette: ClockPalette) {
+        PalettePainter.apply(view, palette)
+        if (::adapter.isInitialized) adapter.palette = palette
     }
 
     private fun reload() {

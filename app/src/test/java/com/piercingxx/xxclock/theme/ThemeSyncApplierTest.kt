@@ -292,6 +292,22 @@ class ThemeSyncApplierTest {
     }
 
     @Test
+    fun `a theme change paints the view tree from the derived palette`() {
+        assertTrue(
+            "ThemeSyncApplier must derive a ClockPalette, not only paint the window ground",
+            applierSource.contains("paletteFor(theme)"),
+        )
+        assertTrue(
+            "ThemeSyncApplier must walk the activity content with PalettePainter",
+            applierSource.contains("PalettePainter.apply"),
+        )
+        assertTrue(
+            "ThemedScreen callbacks must receive the same palette",
+            applierSource.contains("onSyncedThemeApplied"),
+        )
+    }
+
+    @Test
     fun `the theme-level opt-out is kept as well as the window-level one`() {
         // Belt and braces, deliberately: the theme attribute is declaration-level
         // intent, the decor-view flag is the enforcement. Neither replaces the

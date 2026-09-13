@@ -23,9 +23,13 @@ import com.google.android.material.textfield.TextInputLayout
 import com.piercingxx.xxclock.R
 import com.piercingxx.xxclock.model.TimerItem
 import com.piercingxx.xxclock.repo.TimerRepository
+import com.piercingxx.xxclock.theme.ClockPalette
+import com.piercingxx.xxclock.theme.PalettePainter
+import com.piercingxx.xxclock.theme.ThemedScreen
+import com.piercingxx.xxclock.theme.ThemeSyncApplier
 import com.piercingxx.xxclock.time.TimerMath
 
-class TimersFragment : Fragment(R.layout.fragment_timers) {
+class TimersFragment : Fragment(R.layout.fragment_timers), ThemedScreen {
 
     private val handler = Handler(Looper.getMainLooper())
     private val ticker = object : Runnable {
@@ -60,11 +64,32 @@ class TimersFragment : Fragment(R.layout.fragment_timers) {
         }
 
         rebuildCards()
+        onSyncedThemeApplied(ThemeSyncApplier.palette(ctx))
+    }
+
+    override fun onStart() {
+        super.onStart()
+        ThemeSyncApplier.registerThemedScreen(this)
+    }
+
+    override fun onStop() {
+        ThemeSyncApplier.unregisterThemedScreen(this)
+        super.onStop()
     }
 
     override fun onResume() {
         super.onResume()
         handler.post(ticker)
+        view?.let { onSyncedThemeApplied(ThemeSyncApplier.palette(requireContext())) }
+    }
+
+    override fun onSyncedThemeApplied(palette: ClockPalette) {
+        val root = view ?: return
+        PalettePainter.apply(root, palette)
+        val container = root.findViewById<LinearLayout>(R.id.timers_container) ?: return
+        for (i in 0 until container.childCount) {
+            PalettePainter.apply(container.getChildAt(i), palette)
+        }
     }
 
     override fun onPause() {
@@ -241,6 +266,7 @@ class TimersFragment : Fragment(R.layout.fragment_timers) {
         column.addView(actions, actionsParams)
 
         card.addView(column)
+        PalettePainter.apply(card, ThemeSyncApplier.palette(ctx))
         return card
     }
 
