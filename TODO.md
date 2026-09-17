@@ -69,3 +69,13 @@ exemption.
 - Putting this package in Nope-Mode → reject (it cannot ring).
 - Ticking P0 from a laundry-bot Deliver → reject.
 - “Fixing” CONTRACT known-limitations without reopening them here → reject.
+
+---
+
+## WAVE-1 — xx-apps catalog (operator 2026-09-17)
+
+Package `com.piercingxx.xxclock`. Default-on. No fabric login. xx-apps
+may uninstall this APK when the Skippy user is disabled. Keep `INTERNET`
+absent.
+
+- [ ] Clk-E1 — Package id frozen for the store seed. Theme sync stays.
