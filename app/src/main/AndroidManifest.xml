@@ -179,6 +179,12 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/clock_widget_info" />
         </receiver>
+    
+        <provider
+            android:name=".log.LogDumpProvider"
+            android:authorities="${applicationId}.logs"
+            android:exported="true"
+            android:permission="com.piercingxx.apps.permission.READ_SUITE_LOGS" />
     </application>
 
 </manifest>
