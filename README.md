@@ -1,86 +1,38 @@
-# XX Clock
+# XX-Clock
 
 > It wakes you up and then shuts up.
 
-Clock, alarms, timers. Cleanroom, offline, sideloaded onto **GrapheneOS**. No
-Play Services, no analytics, no `INTERNET` permission — verifiable in the
-manifest and in the built APK. It exists because every other clock app wants an
-account, a subscription, or a network connection to tell you what time it is.
+Clock, alarms, timers. Offline. No Play Services, no analytics, no `INTERNET`.
+Every other clock app wants an account, a subscription, or a network
+connection to tell you what time it is.
+
+<img src="docs/images/screenshot.png" width="270" alt="XX Clock on a Pixel 6 — AMOLED Night">
 
 ```
-package: com.piercingxx.xxclock        minSdk 29 (Android 10)
-version 1.0                            target/compileSdk 35
+package: com.piercingxx.xxclock    minSdk 29
 ```
 
-<img src="docs/images/screenshot.png" width="270" alt="XX Clock on a Pixel 6 — AMOLED Night, the family default">
+- Alarms: weekly, labels, vibrate, snooze, volume ramp, auto-silence at ten
+  minutes. `setAlarmClock()` — fires through Doze, re-registers on boot.
+- Per-alarm ringtone. If that URI is gone, it falls through. An alarm that
+  makes no noise is not an alarm.
+- Timers: several at once. Deadlines survive process death.
+- Widget: clock, date, next alarm. No ticking service.
+- Rings through Do Not Disturb on `STREAM_ALARM`.
 
-## What it does ⏰
+The ground is a choice, never an observation. Set Paper at noon and it is
+still Paper at midnight. The full-screen alert is always ink. 3 a.m. is not
+the moment for a Paper screen.
 
-- **Alarms** — weekly recurrence, labels, vibrate, snooze, volume ramp,
-  auto-silence at ten minutes. Scheduled with `setAlarmClock()`, so they fire
-  through Doze and re-register on boot. Full `AlarmClock` replacement:
-  `SHOW_ALARMS` / `SHOW_TIMERS` / `SET_ALARM` / `SET_TIMER` / dismiss / snooze
-  and `CATEGORY_APP_CLOCK`. XX-Launcher's clock widget and Assistant "set an
-  alarm" land here, not Google Clock.
-- **Per-alarm ringtone** — every alarm carries its own tone. Built-in and
-  MediaStore tones always resolve; a storage tone keeps its read grant across
-  reboots wherever the provider offers a persistable one. If that tone's URI
-  is gone or unreadable, the player falls through to the next candidate
-  instead of ringing silent. An alarm that makes no noise is not an alarm.
-- **Timers** — presets and custom, several at once, wall-clock deadlines that
-  survive process death.
-- **Widget** — clock, date, next alarm. `TextClock` in RemoteViews, so there is
-  no ticking service and no battery cost.
-- **Eight themes**, shared across the suite: XX-Launcher broadcasts, every app
-  repaints, Setup picks the same eight locally.
-- **Rings through Do Not Disturb** — alarm audio on `STREAM_ALARM`, which DND
-  allows by default, plus bypass channels once you grant **Do Not Disturb
-  access**. Setup walks you through that and the rest of the checklist.
+**Do not put this package in Nope-Mode.** A suspended app cannot ring.
 
-**The ground is a choice, never an observation.** XX Clock never reads system
-dark mode, sunrise, or the time it is displaying. Set Paper at noon and it is
-still Paper at midnight. Never chosen? AMOLED Night, the family default. The
-full-screen alarm alert opts out entirely — ink ground, white digits, always.
-3 a.m. is not the moment for a Paper screen.
+## Build
 
-## Keep it out of Nope-Mode ⚠
-
-[Nope-Mode](https://github.com/PiercingXX/Nope-Mode) suspends packages as device
-owner, and a suspended app cannot ring, notify, or launch. Do **not** put
-`com.piercingxx.xxclock` in its blocked-apps list. Setup says so permanently, in
-case you forget.
-
-## Build 🛠️
-
-JDK 21 running Gradle 8.11.1, JVM target 17, SDK platform 35. AGP 8.9.1, Kotlin
-2.1.20.
-
-```bash
+```sh
 export ANDROID_HOME=$HOME/Android/Sdk
-./gradlew assembleRelease       # -> app/build/outputs/apk/release/
-./gradlew testDebugUnitTest     # 156 JVM unit tests
-./gradlew lint                  # 0 errors
+./gradlew assembleRelease
+./gradlew testDebugUnitTest
 ```
 
-CI (`.github/workflows/ci.yml`) runs `testDebugUnitTest` on push, pull request,
-and `workflow_dispatch`. No emulator, no instrumented tests.
-
-Sideload the APK, allow **Install unknown apps** for whatever opened it, then
-walk **Setup** (gear, top right). Widget: long-press home → Widgets → XX Clock.
-
-Everything that could be a pure function was written as one, so the recurrence
-math, timer deadlines, ringtone fallback order and theme rules are all tested
-without a device. No keystore is committed — release signing, the component map,
-the theme authority rule, the force-dark fight and the v1 limitations all live
-in [CONTRACT.md](CONTRACT.md).
-
-## Under the hood 🧰
-
-Single module, classic Views, Kotlin. SharedPreferences + `org.json` — no Room,
-no Compose, no coroutines, no GMS. Brand tokens from
-[piercingxx-branding](https://github.com/PiercingXX/piercingxx-branding): AMOLED
-ink, Signal-white accent (the clock face *is* the accent), Space Mono and
-JetBrains Mono bundled in `res/font/`.
-
-Original implementation, specified from public documentation of Google Clock,
-AOSP DeskClock, Fossify Clock and Alarmio. No source or assets copied.
+[CONTRACT.md](CONTRACT.md) is the rest. Cleanroom — Google Clock, AOSP
+DeskClock, Fossify, Alarmio as public docs. No source copied.
